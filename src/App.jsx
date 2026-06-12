@@ -25,7 +25,7 @@ function getInitialCloudStatus() {
     return "클라우드 연결 준비 중";
   }
 
-  return `로컬 저장 모드: Firebase 환경변수 ${missingFirebaseConfigKeys.length}개가 빠졌어요`;
+  return `로컬 저장 모드: ${missingFirebaseConfigKeys.join(", ")} 값이 없어요`;
 }
 
 export function App() {
