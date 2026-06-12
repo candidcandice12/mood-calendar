@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>아이 감정 기록 캘린더</title>
+  <link rel="stylesheet" href="emotion-calendar-kids.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="hero-card">
+      <div class="hero-badge">Mood Calendar</div>
+      <h1>마음 캘린더</h1>
+      <p class="subtitle">오늘 마음을 기록해보세요.<br />하루에 최대 3개까지 고를 수 있어요.</p>
+    </section>
+
+    <section class="user-section" aria-label="사용자 관리">
+      <div class="section-heading-row">
+        <h2 class="user-title">사용자 선택</h2>
+        <span class="current-user-pill" id="currentUserText"></span>
+      </div>
+      <div class="user-list" id="userList"></div>
+      <div class="button-row">
+        <button class="soft-btn" id="changePasswordButton" type="button">비밀번호 변경</button>
+        <button class="soft-btn danger-light" id="deleteUserButton" type="button">사용자 삭제</button>
+      </div>
+    </section>
+
+    <section aria-label="달력">
+      <div class="calendar-header">
+        <button id="prevMonthButton" type="button">이전</button>
+        <h2 id="monthYear"></h2>
+        <button id="nextMonthButton" type="button">다음</button>
+      </div>
+
+      <div class="weekdays" aria-hidden="true">
+        <div>일</div>
+        <div>월</div>
+        <div>화</div>
+        <div>수</div>
+        <div>목</div>
+        <div>금</div>
+        <div>토</div>
+      </div>
+
+      <div class="days" id="calendarDays"></div>
+    </section>
+
+    <section class="section selected-date-box" aria-label="선택한 날짜 기록 상태">
+      <div class="selected-date-label">선택한 날짜</div>
+      <div class="selected-date" id="selectedDateText"></div>
+      <div class="record-mode" id="recordModeText"></div>
+      <div class="today-emotion-preview" id="emotionPreview"></div>
+      <div class="selected-emotion-names" id="selectedEmotionNames"></div>
+    </section>
+
+    <section class="section stats-box" aria-label="이번 달 마음 통계">
+      <h2>이번 달 마음 통계</h2>
+      <div id="monthlySummary" class="monthly-summary"></div>
+      <div id="reportText" class="report-text"></div>
+      <div id="monthlyStats"></div>
+    </section>
+
+    <section class="section report-box" aria-label="이번 주 마음 리포트">
+      <h2>이번 주 마음 리포트</h2>
+      <div id="weeklyReport" class="report-text"></div>
+    </section>
+
+    <section class="section search-box" aria-label="기록 검색">
+      <h2>기록 검색</h2>
+      <p class="hint">감정 이름이나 메모 내용으로 지난 기록을 찾아볼 수 있어요.</p>
+      <input id="searchInput" class="search-input" type="search" placeholder="예: 행복해, 친구, 피곤" />
+      <div id="searchResults" class="search-results"></div>
+    </section>
+
+    <section class="section" aria-label="감정 선택">
+      <div class="section-heading-row">
+        <h2>오늘 마음은 어때?</h2>
+        <span class="selection-count" id="selectionCount">0/3 선택</span>
+      </div>
+      <p class="hint">감정 카드를 누르면 선택되고, 한 번 더 누르면 취소돼요.</p>
+      <div class="emotion-cards" id="emotionCards"></div>
+    </section>
+
+    <section class="section" aria-label="오늘 이야기 작성">
+      <h2>오늘 이야기</h2>
+      <textarea id="memo" placeholder="예: 오늘 친구랑 놀아서 신났어요. 잠을 못 자서 조금 피곤했어요."></textarea>
+      <button class="save-btn" id="saveRecordButton" type="button">저장하기</button>
+      <button class="delete-btn" id="deleteRecordButton" type="button">기록 삭제</button>
+      <p class="status-message" id="statusMessage" role="status"></p>
+    </section>
+
+    <section class="section backup-box" aria-label="백업과 복원">
+      <h2>백업과 복원</h2>
+      <p class="hint">브라우저를 바꾸면 기록이 사라질 수 있어요. 가끔 백업 파일을 저장해두면 안전해요.</p>
+      <div class="button-row">
+        <button class="soft-btn" id="exportButton" type="button">백업 내보내기</button>
+        <button class="soft-btn" id="importButton" type="button">백업 가져오기</button>
+      </div>
+      <input id="importFile" type="file" accept="application/json" hidden />
+    </section>
+  </main>
+
+  <script src="emotion-calendar-kids.js"></script>
+</body>
+</html>

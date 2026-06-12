@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+emotion-calendar-backup-*.json
+function addUser() {.txt

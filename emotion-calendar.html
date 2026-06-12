@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mood Collector</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: "Arial", sans-serif;
+      background: linear-gradient(135deg, #fff1f3, #eef7ff);
+      color: #333;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 22px;
+      border-radius: 28px;
+      box-shadow: 0 10px 30px rgba(180, 160, 160, 0.25);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .calendar-header h2 {
+      font-size: 20px;
+      color: #555;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      background: #ffd6e0;
+      color: #555;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 7px;
+      text-align: center;
+    }
+
+    .weekdays div {
+      color: #999;
+      font-weight: bold;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .day {
+      min-height: 54px;
+      background: #f8f8f8;
+      border-radius: 16px;
+      cursor: pointer;
+      padding: 6px 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .day:hover {
+      background: #ffe8ef;
+      transform: translateY(-2px);
+    }
+
+    .selected {
+      background: #ffb3c6;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 5px 12px rgba(255, 143, 171, 0.4);
+    }
+
+    .record-emoji {
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    .section {
+      margin-top: 24px;
+    }
+
+    .selected-date-box {
+      background: #fff4f7;
+      border-radius: 18px;
+      padding: 14px;
+      text-align: center;
+      font-size: 15px;
+      color: #777;
+    }
+
+    .selected-date {
+      font-weight: bold;
+      color: #ff6f91;
+    }
+
+    .emotion-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .emotion {
+      min-height: 82px;
+      padding: 12px 6px;
+      border-radius: 22px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      color: #444;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+      border: 3px solid transparent;
+    }
+
+    .emotion span {
+      font-size: 25px;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .emotion:hover {
+      transform: translateY(-4px);
+    }
+
+    .emotion.active {
+      transform: scale(1.06);
+      border: 3px solid white;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.16);
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      border-radius: 18px;
+      border: 2px solid #ffe0e9;
+      padding: 14px;
+      font-size: 15px;
+      resize: none;
+      outline: none;
+      background: #fffdfd;
+    }
+
+    textarea:focus {
+      border-color: #ffb3c6;
+    }
+
+    .save-btn {
+      width: 100%;
+      margin-top: 16px;
+      background: #ff8fab;
+      color: white;
+      font-size: 16px;
+      padding: 14px;
+    }
+
+    .delete-btn {
+      width: 100%;
+      margin-top: 9px;
+      background: #e9ecef;
+      color: #777;
+      padding: 13px;
+    }
+
+    .today-emotion-preview {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 38px;
+      min-height: 48px;
+    }
+
+    @media (max-width: 420px) {
+      .emotion-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .emotion {
+        min-height: 76px;
+        font-size: 13px;
+      }
+
+      .day {
+        min-height: 48px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>감정 기록 캘린더</h1>
+    <div class="subtitle">오늘의 마음을 색깔과 이모지로 남겨보세요</div>
+
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)">이전</button>
+      <h2 id="monthYear"></h2>
+      <button onclick="changeMonth(1)">다음</button>
+    </div>
+
+    <div class="weekdays">
+      <div>일</div>
+      <div>월</div>
+      <div>화</div>
+      <div>수</div>
+      <div>목</div>
+      <div>금</div>
+      <div>토</div>
+    </div>
+
+    <div class="days" id="calendarDays"></div>
+
+    <div class="section selected-date-box">
+      선택한 날짜:
+      <span class="selected-date" id="selectedDateText"></span>
+      <div class="today-emotion-preview" id="emotionPreview"></div>
+    </div>
+
+    <div class="section">
+      <h3>오늘의 감정은?</h3>
+
+      <div class="emotion-cards" id="emotionCards"></div>
+    </div>
+
+    <div class="section">
+      <h3>오늘 이야기</h3>
+      <textarea id="memo" placeholder="오늘 있었던 일이나 마음을 적어보세요."></textarea>
+      <button class="save-btn" onclick="saveRecord()">저장하기</button>
+      <button class="delete-btn" onclick="deleteRecord()">기록 삭제</button>
+    </div>
+  </div>
+
+  <script>
+    const monthYear = document.getElementById("monthYear");
+    const calendarDays = document.getElementById("calendarDays");
+    const selectedDateText = document.getElementById("selectedDateText");
+    const memoInput = document.getElementById("memo");
+    const emotionCards = document.getElementById("emotionCards");
+    const emotionPreview = document.getElementById("emotionPreview");
+
+    const emotions = [
+      { emoji: "😊", name: "기쁨", color: "#FFD93D" },
+      { emoji: "🥰", name: "행복", color: "#FFB3C6" },
+      { emoji: "😌", name: "편안함", color: "#B8F2E6" },
+      { emoji: "😄", name: "신남", color: "#FFD6A5" },
+      { emoji: "😍", name: "설렘", color: "#FFC8DD" },
+      { emoji: "😎", name: "자신감", color: "#A2D2FF" },
+      { emoji: "🤗", name: "고마움", color: "#FDE2A7" },
+      { emoji: "😋", name: "만족", color: "#CAFFBF" },
+      { emoji: "🌸", name: "평온함", color: "#E7C6FF" },
+      { emoji: "💪", name: "뿌듯함", color: "#B9FBC0" },
+
+      { emoji: "😢", name: "슬픔", color: "#BDE0FE" },
+      { emoji: "😡", name: "화남", color: "#FFADAD" },
+      { emoji: "😞", name: "우울함", color: "#CDB4DB" },
+      { emoji: "😟", name: "불안", color: "#D0BFFF" },
+      { emoji: "😣", name: "답답함", color: "#DEE2E6" },
+      { emoji: "😔", name: "외로움", color: "#D8E2DC" },
+      { emoji: "😴", name: "피곤함", color: "#DDBDF1" },
+      { emoji: "😫", name: "지침", color: "#E6CCB2" },
+      { emoji: "😰", name: "걱정", color: "#CDE7F0" },
+      { emoji: "😐", name: "무기력", color: "#E9ECEF" }
+    ];
+
+    let today = new Date();
+    let currentYear = today.getFullYear();
+    let currentMonth = today.getMonth();
+    let selectedDate = formatDate(today);
+    let selectedEmotions = [];
+
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderEmotionCards() {
+      emotionCards.innerHTML = "";
+
+      emotions.forEach(emotion => {
+        const card = document.createElement("div");
+        card.className = "emotion";
+        card.style.background = emotion.color;
+        card.innerHTML = `
+          <span>${emotion.emoji}</span>
+          ${emotion.name}
+        `;
+
+        card.onclick = function () {
+          selectEmotion(emotion, card);
+        };
+
+        emotionCards.appendChild(card);
+      });
+    }
+
+    function renderCalendar() {
+      calendarDays.innerHTML = "";
+      monthYear.textContent = `${currentYear}년 ${currentMonth + 1}월`;
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        calendarDays.appendChild(empty);
+      }
+
+      for (let day = 1; day <= lastDate; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        const dateString = formatDate(date);
+        const record = getRecord(dateString);
+
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "day";
+
+        if (dateString === selectedDate) {
+          dayDiv.classList.add("selected");
+        }
+
+        dayDiv.innerHTML = `
+          <div>${day}</div>
+          <div class="record-emoji">
+  ${getRecordEmotions(record).map(item => item.emoji).join("")}
+</div>
+        `;
+
+        dayDiv.onclick = function () {
+          selectedDate = dateString;
+          loadRecord();
+          renderCalendar();
+        };
+
+        calendarDays.appendChild(dayDiv);
+      }
+
+      selectedDateText.textContent = selectedDate;
+    }
+
+    function changeMonth(direction) {
+      currentMonth += direction;
+
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+
+      renderCalendar();
+    }
+
+   function selectEmotion(emotion, cardElement) {
+  const alreadySelected = selectedEmotions.some(item => item.name === emotion.name);
+
+  if (alreadySelected) {
+    selectedEmotions = selectedEmotions.filter(item => item.name !== emotion.name);
+    cardElement.classList.remove("active");
+  } else {
+    if (selectedEmotions.length >= 3) {
+      alert("감정은 하루에 최대 3개까지 선택할 수 있어요.");
+      return;
+    }
+
+    selectedEmotions.push(emotion);
+    cardElement.classList.add("active");
+  }
+
+  emotionPreview.textContent = selectedEmotions
+    .map(item => item.emoji)
+    .join(" ");
+}
+
+    function saveRecord() {
+      if (selectedEmotions.length === 0) {
+  alert("감정을 1개 이상 선택해 주세요.");
+  return;
+}
+
+      const records = JSON.parse(localStorage.getItem("emotionRecords")) || {};
+
+      records[selectedDate] = {
+        emotions: selectedEmotions,
+        memo: memoInput.value
+      };
+
+      localStorage.setItem("emotionRecords", JSON.stringify(records));
+
+      alert("저장되었습니다.");
+      renderCalendar();
+    }
+
+    function getRecord(dateString) {
+      const records = JSON.parse(localStorage.getItem("emotionRecords")) || {};
+      return records[dateString];
+    }
+
+	function getRecordEmotions(record) {
+  if (!record) return [];
+
+  if (record.emotions) {
+    return record.emotions;
+  }
+
+  if (record.emotion) {
+    return [record.emotion];
+  }
+
+  return [];
+}
+	
+
+    function loadRecord() {
+  selectedDateText.textContent = selectedDate;
+
+  const record = getRecord(selectedDate);
+  const cards = document.querySelectorAll(".emotion");
+
+  cards.forEach(card => card.classList.remove("active"));
+
+  if (record) {
+    selectedEmotions = getRecordEmotions(record);
+    memoInput.value = record.memo || "";
+
+    emotionPreview.textContent = selectedEmotions
+      .map(item => item.emoji)
+      .join(" ");
+
+    cards.forEach((card, index) => {
+      if (selectedEmotions.some(item => item.name === emotions[index].name)) {
+        card.classList.add("active");
+      }
+    });
+  } else {
+    selectedEmotions = [];
+    memoInput.value = "";
+    emotionPreview.textContent = "";
+  }
+}
+
+    function deleteRecord() {
+      const records = JSON.parse(localStorage.getItem("emotionRecords")) || {};
+
+      if (!records[selectedDate]) {
+        alert("삭제할 기록이 없습니다.");
+        return;
+      }
+
+      delete records[selectedDate];
+      localStorage.setItem("emotionRecords", JSON.stringify(records));
+
+      selectedEmotions = [];
+      memoInput.value = "";
+      emotionPreview.textContent = "";
+
+      const cards = document.querySelectorAll(".emotion");
+      cards.forEach(card => card.classList.remove("active"));
+
+      alert("기록이 삭제되었습니다.");
+      renderCalendar();
+    }
+
+    renderEmotionCards();
+    loadRecord();
+    renderCalendar();
+  </script>
+</body>
+</html>
