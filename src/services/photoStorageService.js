@@ -1,7 +1,7 @@
 import { deleteObject, getDownloadURL, ref, uploadString } from "firebase/storage";
 import { isFirebaseConfigured, signInToFirebase, storage } from "../firebase";
 
-export async function uploadRecordPhoto(userName, date, photoDataUrl) {
+export async function uploadRecordPhoto(userName, date, photoDataUrl, familyId = "") {
   if (!isFirebaseConfigured || !storage || !photoDataUrl?.startsWith("data:")) {
     return null;
   }
@@ -12,7 +12,8 @@ export async function uploadRecordPhoto(userName, date, photoDataUrl) {
     return null;
   }
 
-  const path = `users/${user.uid}/records/${encodeURIComponent(userName)}/${date}/photo.jpg`;
+  const ownerPath = familyId ? `families/${familyId}` : `users/${user.uid}`;
+  const path = `${ownerPath}/records/${encodeURIComponent(userName)}/${date}/photo.jpg`;
   const photoRef = ref(storage, path);
 
   await uploadString(photoRef, photoDataUrl, "data_url");

@@ -1,5 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { browserLocalPersistence, getAuth, setPersistence, signInAnonymously } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  browserLocalPersistence,
+  getAuth,
+  onAuthStateChanged,
+  setPersistence,
+  signInAnonymously,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -49,4 +58,32 @@ export async function signInToFirebase() {
   await setPersistence(auth, browserLocalPersistence);
   const credential = await signInAnonymously(auth);
   return credential.user;
+}
+
+export function subscribeToFirebaseAuth(callback) {
+  if (!auth) {
+    callback(null);
+    return () => {};
+  }
+
+  return onAuthStateChanged(auth, callback);
+}
+
+export async function signInWithGoogle() {
+  if (!auth) {
+    return null;
+  }
+
+  await setPersistence(auth, browserLocalPersistence);
+  const provider = new GoogleAuthProvider();
+  const credential = await signInWithPopup(auth, provider);
+  return credential.user;
+}
+
+export async function signOutFromFirebase() {
+  if (!auth) {
+    return;
+  }
+
+  await signOut(auth);
 }

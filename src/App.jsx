@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AccountBox } from "./components/AccountBox";
 import { BackupBox } from "./components/BackupBox";
 import { Calendar } from "./components/Calendar";
 import { EmotionPicker } from "./components/EmotionPicker";
@@ -10,8 +11,8 @@ import { StatsPanel } from "./components/StatsPanel";
 import { TabNav } from "./components/TabNav";
 import { UserManager } from "./components/UserManager";
 import { defaultUsers } from "./data/emotions";
-import { isFirebaseConfigured, missingFirebaseConfigKeys } from "./firebase";
-import { deleteCloudRecord, loadCloudState, saveCloudState } from "./services/cloudDataService";
+import { isFirebaseConfigured, missingFirebaseConfigKeys, signInToFirebase, signInWithGoogle, signOutFromFirebase, subscribeToFirebaseAuth } from "./firebase";
+import { createFamilyRoom, deleteCloudRecord, joinFamilyRoom, loadCloudState, saveCloudState } from "./services/cloudDataService";
 import { deleteRecordPhoto, uploadRecordPhoto } from "./services/photoStorageService";
 import { formatDate } from "./utils/date";
 import { getSavedCurrentUserName, normalizeUsers, readJson } from "./utils/storage";
@@ -42,6 +43,9 @@ export function App() {
   const [status, setStatus] = useState("");
   const [cloudStatus, setCloudStatus] = useState(getInitialCloudStatus());
   const [isCloudLoaded, setIsCloudLoaded] = useState(!isFirebaseConfigured);
+  const [authUser, setAuthUser] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(!isFirebaseConfigured);
+  const [familyId, setFamilyId] = useState(() => localStorage.getItem("emotionFamilyId") || "");
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("record");
 
@@ -72,11 +76,38 @@ export function App() {
   useEffect(() => {
     if (!isFirebaseConfigured) return;
 
+    const unsubscribe = subscribeToFirebaseAuth((user) => {
+      setAuthUser(user);
+      setIsAuthReady(true);
+    });
+
+    signInToFirebase().catch((error) => {
+      setCloudStatus("클라우드 로그인 준비 실패: 로컬에 저장 중");
+      setIsAuthReady(true);
+      console.error(error);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (familyId) {
+      localStorage.setItem("emotionFamilyId", familyId);
+    } else {
+      localStorage.removeItem("emotionFamilyId");
+    }
+  }, [familyId]);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+    if (!isAuthReady || !authUser) return;
+
     let isMounted = true;
 
     async function loadState() {
       try {
-        const cloudState = await loadCloudState();
+        setIsCloudLoaded(false);
+        const cloudState = await loadCloudState(familyId);
 
         if (!isMounted) return;
 
@@ -86,9 +117,9 @@ export function App() {
           setUsers(cloudUsers);
           setCurrentUser(cloudUsers.find((user) => user.name === cloudState.currentEmotionUser) || cloudUsers[0]);
           setRecords(mergeLocalPhotos(cloudState.emotionRecordsByUser || {}, localRecords));
-          setCloudStatus("클라우드 기록을 불러왔어요");
+          setCloudStatus(familyId ? "가족방 기록을 불러왔어요" : "클라우드 기록을 불러왔어요");
         } else {
-          setCloudStatus("클라우드에 새 기록을 만들 준비가 됐어요");
+          setCloudStatus(familyId ? "가족방에 새 기록을 만들 준비가 됐어요" : "클라우드에 새 기록을 만들 준비가 됐어요");
         }
       } catch (error) {
         setCloudStatus("클라우드 연결 실패: 로컬에 저장 중");
@@ -105,10 +136,11 @@ export function App() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [authUser, familyId, isAuthReady]);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !isCloudLoaded) return;
+    if (!isAuthReady || !authUser) return;
 
     const timeoutId = window.setTimeout(async () => {
       try {
@@ -116,8 +148,8 @@ export function App() {
           emotionUsers: users,
           currentEmotionUser: currentUser.name,
           emotionRecordsByUser: records,
-        });
-        setCloudStatus("클라우드에 저장됐어요");
+        }, familyId);
+        setCloudStatus(familyId ? "가족방에 저장됐어요" : "클라우드에 저장됐어요");
       } catch (error) {
         setCloudStatus("클라우드 저장 실패: 로컬에는 저장됐어요");
         console.error(error);
@@ -125,7 +157,7 @@ export function App() {
     }, 800);
 
     return () => window.clearTimeout(timeoutId);
-  }, [users, currentUser, records, isCloudLoaded]);
+  }, [users, currentUser, records, familyId, authUser, isAuthReady, isCloudLoaded]);
 
   useEffect(() => {
     const record = records[currentUser.name]?.[selectedDate];
@@ -253,7 +285,7 @@ export function App() {
           await deleteRecordPhoto(currentRecord.photoPath);
         }
 
-        const uploadedPhoto = await uploadRecordPhoto(currentUser.name, selectedDate, photo);
+        const uploadedPhoto = await uploadRecordPhoto(currentUser.name, selectedDate, photo, familyId);
         nextPhoto = "";
         nextPhotoUrl = uploadedPhoto?.photoUrl || "";
         nextPhotoPath = uploadedPhoto?.photoPath || "";
@@ -306,7 +338,7 @@ export function App() {
         await deleteRecordPhoto(currentRecord.photoPath);
       }
 
-      await deleteCloudRecord(currentUser.name, selectedDate);
+      await deleteCloudRecord(currentUser.name, selectedDate, familyId);
     } catch (error) {
       setStatus("클라우드 사진/기록 삭제 중 문제가 있었어요. 로컬 기록은 삭제합니다.");
       console.error(error);
@@ -348,6 +380,78 @@ export function App() {
     setCurrentMonth(Number(month) - 1);
     setSelectedDate(dateString);
     setActiveTab("record");
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      await signInWithGoogle();
+      setCloudStatus("Google 로그인에 성공했어요");
+    } catch (error) {
+      setCloudStatus("Google 로그인에 실패했어요");
+      console.error(error);
+    }
+  }
+
+  async function handleSignOut() {
+    const ok = confirm("로그아웃할까요? 이 브라우저에는 로컬 기록이 남아 있어요.");
+
+    if (!ok) return;
+
+    try {
+      await signOutFromFirebase();
+      setFamilyId("");
+      setCloudStatus("로그아웃했어요. 로컬 저장 모드입니다.");
+    } catch (error) {
+      setCloudStatus("로그아웃 중 문제가 있었어요.");
+      console.error(error);
+    }
+  }
+
+  async function handleCreateFamily() {
+    if (!authUser?.email) {
+      setStatus("먼저 Google로 로그인해 주세요.");
+      return;
+    }
+
+    try {
+      const nextFamilyId = await createFamilyRoom({
+        emotionUsers: users,
+        currentEmotionUser: currentUser.name,
+        emotionRecordsByUser: records,
+      });
+      setFamilyId(nextFamilyId);
+      setCloudStatus(`가족방을 만들었어요. 초대 코드: ${nextFamilyId}`);
+      setActiveTab("settings");
+    } catch (error) {
+      setCloudStatus("가족방 만들기에 실패했어요.");
+      console.error(error);
+    }
+  }
+
+  async function handleJoinFamily(inviteCode) {
+    if (!authUser?.email) {
+      setStatus("먼저 Google로 로그인해 주세요.");
+      return;
+    }
+
+    try {
+      const nextFamilyId = await joinFamilyRoom(inviteCode);
+      setFamilyId(nextFamilyId);
+      setCloudStatus("가족방에 참여했어요. 가족 기록을 불러올게요.");
+      setActiveTab("settings");
+    } catch (error) {
+      setCloudStatus(error.message || "가족방 참여에 실패했어요.");
+      console.error(error);
+    }
+  }
+
+  function handleLeaveFamily() {
+    const ok = confirm("이 브라우저에서 가족방 연결을 해제할까요? 가족방 데이터는 삭제되지 않아요.");
+
+    if (!ok) return;
+
+    setFamilyId("");
+    setCloudStatus("가족방 연결을 해제했어요. 개인 클라우드 저장으로 전환합니다.");
   }
 
   function exportBackup() {
@@ -460,7 +564,20 @@ export function App() {
         />
       )}
 
-      {activeTab === "settings" && <BackupBox onExportBackup={exportBackup} onImportBackup={importBackup} />}
+      {activeTab === "settings" && (
+        <div className="tab-panel">
+          <AccountBox
+            authUser={authUser}
+            familyId={familyId}
+            onGoogleSignIn={handleGoogleSignIn}
+            onSignOut={handleSignOut}
+            onCreateFamily={handleCreateFamily}
+            onJoinFamily={handleJoinFamily}
+            onLeaveFamily={handleLeaveFamily}
+          />
+          <BackupBox onExportBackup={exportBackup} onImportBackup={importBackup} />
+        </div>
+      )}
     </main>
   );
 }

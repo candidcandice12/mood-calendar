@@ -118,6 +118,7 @@ h2 {
 
 .user-section,
 .selected-date-box,
+.account-box,
 .backup-box,
 .report-box,
 .search-box {
@@ -189,6 +190,48 @@ h2 {
 
 .search-box {
   background: #fffaf0;
+}
+
+.account-box {
+  background: #f1fbff;
+}
+
+.account-card,
+.family-card {
+  border: 2px solid rgba(184, 242, 230, 0.72);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.account-card {
+  display: grid;
+  gap: 8px;
+}
+
+.account-label {
+  color: #6f7f95;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.invite-code {
+  display: inline-block;
+  border-radius: 16px;
+  background: #fff8cc;
+  color: #5f6673;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 8px 0;
+  padding: 10px 14px;
+}
+
+.invite-form {
+  display: grid;
+  gap: 10px;
 }
 
 .user-title {

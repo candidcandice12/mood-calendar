@@ -1,7 +1,7 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { db, isFirebaseConfigured, signInToFirebase } from "../firebase";
 
-export async function loadCloudState() {
+export async function loadCloudState(familyId = "") {
   if (!isFirebaseConfigured || !db) {
     return null;
   }
@@ -12,8 +12,12 @@ export async function loadCloudState() {
     return null;
   }
 
-  const appStateSnapshot = await getDoc(getAppStateRef(user.uid));
-  const recordsSnapshot = await getDocs(getRecordsCollectionRef(user.uid));
+  if (familyId) {
+    await ensureFamilyMember(familyId, user);
+  }
+
+  const appStateSnapshot = await getDoc(getAppStateRef(user.uid, familyId));
+  const recordsSnapshot = await getDocs(getRecordsCollectionRef(user.uid, familyId));
 
   if (!appStateSnapshot.exists() && recordsSnapshot.empty) {
     return null;
@@ -50,7 +54,7 @@ export async function loadCloudState() {
   };
 }
 
-export async function saveCloudState(state) {
+export async function saveCloudState(state, familyId = "") {
   if (!isFirebaseConfigured || !db) {
     return;
   }
@@ -61,16 +65,20 @@ export async function saveCloudState(state) {
     return;
   }
 
-  await setDoc(getAppStateRef(user.uid), {
+  if (familyId) {
+    await ensureFamilyMember(familyId, user);
+  }
+
+  await setDoc(getAppStateRef(user.uid, familyId), {
     emotionUsers: state.emotionUsers,
     currentEmotionUser: state.currentEmotionUser,
     updatedAt: serverTimestamp(),
   });
 
-  await replaceRecords(user.uid, state.emotionRecordsByUser || {});
+  await replaceRecords(user.uid, state.emotionRecordsByUser || {}, familyId);
 }
 
-export async function deleteCloudRecord(userName, date) {
+export async function deleteCloudRecord(userName, date, familyId = "") {
   if (!isFirebaseConfigured || !db) {
     return;
   }
@@ -81,11 +89,59 @@ export async function deleteCloudRecord(userName, date) {
     return;
   }
 
-  await deleteDoc(getRecordDocRef(user.uid, userName, date));
+  await deleteDoc(getRecordDocRef(user.uid, userName, date, familyId));
 }
 
-async function replaceRecords(uid, recordsByUser) {
-  const existingRecords = await getDocs(getRecordsCollectionRef(uid));
+export async function createFamilyRoom(state) {
+  if (!isFirebaseConfigured || !db) {
+    return "";
+  }
+
+  const user = await signInToFirebase();
+
+  if (!user) {
+    return "";
+  }
+
+  const familyId = createInviteCode();
+  await setDoc(getFamilyRef(familyId), {
+    createdBy: user.uid,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  await saveCloudState(state, familyId);
+  return familyId;
+}
+
+export async function joinFamilyRoom(inviteCode) {
+  if (!isFirebaseConfigured || !db) {
+    return "";
+  }
+
+  const user = await signInToFirebase();
+
+  if (!user) {
+    return "";
+  }
+
+  const familyId = normalizeInviteCode(inviteCode);
+
+  if (!/^FAM-[A-Z0-9]{6}$/.test(familyId)) {
+    throw new Error("초대 코드는 FAM-ABC123 형식으로 입력해 주세요.");
+  }
+
+  const familySnapshot = await getDoc(getFamilyRef(familyId));
+
+  if (!familySnapshot.exists()) {
+    throw new Error("가족방을 찾지 못했어요. 초대 코드를 확인해 주세요.");
+  }
+
+  await ensureFamilyMember(familyId, user);
+  return familyId;
+}
+
+async function replaceRecords(uid, recordsByUser, familyId = "") {
+  const existingRecords = await getDocs(getRecordsCollectionRef(uid, familyId));
   const nextRecordIds = new Set();
   const batch = writeBatch(db);
 
@@ -93,7 +149,7 @@ async function replaceRecords(uid, recordsByUser) {
     Object.entries(userRecords || {}).forEach(([date, record]) => {
       const recordId = getRecordId(userName, date);
       nextRecordIds.add(recordId);
-      batch.set(getRecordDocRef(uid, userName, date), normalizeRecordForCloud(userName, date, record));
+      batch.set(getRecordDocRef(uid, userName, date, familyId), normalizeRecordForCloud(userName, date, record));
     });
   });
 
@@ -118,18 +174,56 @@ function normalizeRecordForCloud(userName, date, record) {
   };
 }
 
-function getAppStateRef(uid) {
+async function ensureFamilyMember(familyId, user) {
+  await setDoc(getFamilyMemberRef(familyId, user.uid), {
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || "",
+    joinedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+function getAppStateRef(uid, familyId = "") {
+  if (familyId) {
+    return doc(db, "families", familyId, "moodCalendar", "appState");
+  }
+
   return doc(db, "users", uid, "moodCalendar", "appState");
 }
 
-function getRecordsCollectionRef(uid) {
+function getRecordsCollectionRef(uid, familyId = "") {
+  if (familyId) {
+    return collection(db, "families", familyId, "records");
+  }
+
   return collection(db, "users", uid, "records");
 }
 
-function getRecordDocRef(uid, userName, date) {
+function getRecordDocRef(uid, userName, date, familyId = "") {
+  if (familyId) {
+    return doc(db, "families", familyId, "records", getRecordId(userName, date));
+  }
+
   return doc(db, "users", uid, "records", getRecordId(userName, date));
+}
+
+function getFamilyRef(familyId) {
+  return doc(db, "families", familyId);
+}
+
+function getFamilyMemberRef(familyId, uid) {
+  return doc(db, "families", familyId, "members", uid);
 }
 
 function getRecordId(userName, date) {
   return `${encodeURIComponent(userName)}__${date}`;
+}
+
+function createInviteCode() {
+  const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `FAM-${randomPart}`;
+}
+
+function normalizeInviteCode(inviteCode) {
+  return String(inviteCode || "").trim().toUpperCase();
 }
