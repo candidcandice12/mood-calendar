@@ -11,7 +11,7 @@ import { StatsPanel } from "./components/StatsPanel";
 import { TabNav } from "./components/TabNav";
 import { UserManager } from "./components/UserManager";
 import { defaultUsers } from "./data/emotions";
-import { isFirebaseConfigured, missingFirebaseConfigKeys, signInToFirebase, signInWithGoogle, signOutFromFirebase, subscribeToFirebaseAuth } from "./firebase";
+import { isFirebaseConfigured, missingFirebaseConfigKeys, signInWithGoogle, signOutFromFirebase, subscribeToFirebaseAuth } from "./firebase";
 import { createFamilyRoom, deleteCloudRecord, joinFamilyRoom, loadCloudState, saveCloudState } from "./services/cloudDataService";
 import { deleteRecordPhoto, uploadRecordPhoto } from "./services/photoStorageService";
 import { formatDate } from "./utils/date";
@@ -32,7 +32,7 @@ function getInitialCloudStatus() {
 export function App() {
   const initialUsers = normalizeUsers(readJson("emotionUsers", defaultUsers));
   const [users, setUsers] = useState(initialUsers);
-  const [currentUser, setCurrentUser] = useState(initialUsers.find((user) => user.name === getSavedCurrentUserName(initialUsers)) || initialUsers[0]);
+  const [currentUser, setCurrentUser] = useState(initialUsers.find((user) => user.name === getSavedCurrentUserName(initialUsers)) || initialUsers[0] || null);
   const [records, setRecords] = useState(readJson("emotionRecordsByUser", {}));
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -49,15 +49,19 @@ export function App() {
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("record");
 
-  const currentRecord = records[currentUser.name]?.[selectedDate] || null;
-  const monthStats = getMonthStats(records, currentUser.name, currentYear, currentMonth);
-  const weeklyReport = getWeeklyReport(records, currentUser.name, selectedDate);
-  const searchResults = getSearchResults(records, currentUser.name, searchText);
+  const currentRecord = currentUser ? records[currentUser.name]?.[selectedDate] || null : null;
+  const monthStats = currentUser ? getMonthStats(records, currentUser.name, currentYear, currentMonth) : [];
+  const weeklyReport = currentUser ? getWeeklyReport(records, currentUser.name, selectedDate) : [];
+  const searchResults = currentUser ? getSearchResults(records, currentUser.name, searchText) : [];
 
   useEffect(() => {
     try {
       localStorage.setItem("emotionUsers", JSON.stringify(users));
-      localStorage.setItem("currentEmotionUser", currentUser.name);
+      if (currentUser) {
+        localStorage.setItem("currentEmotionUser", currentUser.name);
+      } else {
+        localStorage.removeItem("currentEmotionUser");
+      }
     } catch (error) {
       setStatus("브라우저 저장 공간이 부족할 수 있어요.");
       console.error(error);
@@ -79,12 +83,6 @@ export function App() {
     const unsubscribe = subscribeToFirebaseAuth((user) => {
       setAuthUser(user);
       setIsAuthReady(true);
-    });
-
-    signInToFirebase().catch((error) => {
-      setCloudStatus("클라우드 로그인 준비 실패: 로컬에 저장 중");
-      setIsAuthReady(true);
-      console.error(error);
     });
 
     return unsubscribe;
@@ -115,7 +113,7 @@ export function App() {
           const cloudUsers = normalizeUsers(cloudState.emotionUsers || defaultUsers);
           const localRecords = readJson("emotionRecordsByUser", {});
           setUsers(cloudUsers);
-          setCurrentUser(cloudUsers.find((user) => user.name === cloudState.currentEmotionUser) || cloudUsers[0]);
+          setCurrentUser(cloudUsers.find((user) => user.name === cloudState.currentEmotionUser) || cloudUsers[0] || null);
           setRecords(mergeLocalPhotos(cloudState.emotionRecordsByUser || {}, localRecords));
           setCloudStatus(familyId ? "가족방 기록을 불러왔어요" : "클라우드 기록을 불러왔어요");
         } else {
@@ -141,6 +139,7 @@ export function App() {
   useEffect(() => {
     if (!isFirebaseConfigured || !isCloudLoaded) return;
     if (!isAuthReady || !authUser) return;
+    if (!currentUser) return;
 
     const timeoutId = window.setTimeout(async () => {
       try {
@@ -160,6 +159,14 @@ export function App() {
   }, [users, currentUser, records, familyId, authUser, isAuthReady, isCloudLoaded]);
 
   useEffect(() => {
+    if (!currentUser) {
+      setSelectedEmotions([]);
+      setMemo("");
+      setPhoto("");
+      setStatus("");
+      return;
+    }
+
     const record = records[currentUser.name]?.[selectedDate];
 
     if (record) {
@@ -173,7 +180,7 @@ export function App() {
     }
 
     setStatus("");
-  }, [records, currentUser.name, selectedDate]);
+  }, [records, currentUser?.name, selectedDate]);
 
   function addUser(newUser) {
     setUsers((prevUsers) => [...prevUsers, newUser]);
@@ -182,8 +189,30 @@ export function App() {
     setStatus(`${newUser.name} 사용자를 추가했어요.`);
   }
 
+  function editCurrentUser(updatedUser) {
+    if (!currentUser) return;
+
+    const previousName = currentUser.name;
+    setUsers((prevUsers) => prevUsers.map((user) => user.name === previousName ? updatedUser : user));
+    setCurrentUser(updatedUser);
+    setRecords((prevRecords) => {
+      if (previousName === updatedUser.name) {
+        return prevRecords;
+      }
+
+      const nextRecords = { ...prevRecords };
+      nextRecords[updatedUser.name] = {
+        ...(nextRecords[updatedUser.name] || {}),
+        ...(nextRecords[previousName] || {}),
+      };
+      delete nextRecords[previousName];
+      return nextRecords;
+    });
+    setStatus("사용자 이름과 이모지를 바꿨어요.");
+  }
+
   function selectUser(user) {
-    if (user.name !== currentUser.name) {
+    if (!currentUser || user.name !== currentUser.name) {
       const password = prompt(`${user.name} 비밀번호를 입력해 주세요.`);
 
       if (password !== user.password) {
@@ -196,6 +225,8 @@ export function App() {
   }
 
   function changePassword() {
+    if (!currentUser) return;
+
     const oldPassword = prompt("현재 비밀번호를 입력해 주세요.");
 
     if (oldPassword !== currentUser.password) {
@@ -214,6 +245,8 @@ export function App() {
   }
 
   function deleteCurrentUser() {
+    if (!currentUser) return;
+
     if (users.length <= 1) {
       alert("사용자는 최소 1명은 있어야 해요.");
       return;
@@ -234,7 +267,7 @@ export function App() {
     const nextRecords = { ...records };
     delete nextRecords[currentUser.name];
     setUsers(nextUsers);
-    setCurrentUser(nextUsers[0]);
+    setCurrentUser(nextUsers[0] || null);
     setRecords(nextRecords);
     setStatus("사용자를 삭제했어요.");
   }
@@ -269,6 +302,11 @@ export function App() {
   }
 
   async function saveRecord() {
+    if (!currentUser) {
+      setStatus("먼저 사용자를 만들어 주세요.");
+      return;
+    }
+
     if (selectedEmotions.length === 0) {
       setStatus("감정을 1개 이상 선택해 주세요.");
       return;
@@ -324,6 +362,11 @@ export function App() {
   }
 
   async function deleteRecord() {
+    if (!currentUser) {
+      setStatus("먼저 사용자를 만들어 주세요.");
+      return;
+    }
+
     if (!currentRecord) {
       setStatus("삭제할 기록이 없어요.");
       return;
@@ -413,6 +456,11 @@ export function App() {
       return;
     }
 
+    if (!currentUser) {
+      setStatus("먼저 사용자를 만들어 주세요.");
+      return;
+    }
+
     try {
       const nextFamilyId = await createFamilyRoom({
         emotionUsers: users,
@@ -423,7 +471,7 @@ export function App() {
       setCloudStatus(`가족방을 만들었어요. 초대 코드: ${nextFamilyId}`);
       setActiveTab("settings");
     } catch (error) {
-      setCloudStatus("가족방 만들기에 실패했어요.");
+      setCloudStatus(`가족방 만들기 실패: ${getFriendlyErrorMessage(error)}`);
       console.error(error);
     }
   }
@@ -440,7 +488,7 @@ export function App() {
       setCloudStatus("가족방에 참여했어요. 가족 기록을 불러올게요.");
       setActiveTab("settings");
     } catch (error) {
-      setCloudStatus(error.message || "가족방 참여에 실패했어요.");
+      setCloudStatus(`가족방 참여 실패: ${getFriendlyErrorMessage(error)}`);
       console.error(error);
     }
   }
@@ -459,7 +507,7 @@ export function App() {
       version: 1,
       exportedAt: new Date().toISOString(),
       emotionUsers: users,
-      currentEmotionUser: currentUser.name,
+      currentEmotionUser: currentUser?.name || "",
       emotionRecordsByUser: records,
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
@@ -508,7 +556,7 @@ export function App() {
       <section className="hero-card">
         <div className="hero-badge">Mood Calendar</div>
         <h1>마음 캘린더</h1>
-        <p className="subtitle">{currentUser.avatar} {currentUser.name}의 오늘 마음을 기록해보세요.</p>
+        <p className="subtitle">{currentUser ? `${currentUser.avatar} ${currentUser.name}의 오늘 마음을 기록해보세요.` : "새 사용자를 만들고 마음 기록을 시작해보세요."}</p>
         <div className="cloud-status">{cloudStatus}</div>
       </section>
 
@@ -516,24 +564,29 @@ export function App() {
         users={users}
         currentUser={currentUser}
         onAddUser={addUser}
+        onEditCurrentUser={editCurrentUser}
         onSelectUser={selectUser}
         onChangePassword={changePassword}
         onDeleteCurrentUser={deleteCurrentUser}
       />
 
-      <Calendar
-        currentYear={currentYear}
-        currentMonth={currentMonth}
-        selectedDate={selectedDate}
-        records={records}
-        currentUser={currentUser}
-        onChangeMonth={changeMonth}
-        onSelectDate={selectDate}
-      />
+      {currentUser && (
+        <>
+          <Calendar
+            currentYear={currentYear}
+            currentMonth={currentMonth}
+            selectedDate={selectedDate}
+            records={records}
+            currentUser={currentUser}
+            onChangeMonth={changeMonth}
+            onSelectDate={selectDate}
+          />
 
-      <TabNav activeTab={activeTab} onChangeTab={setActiveTab} />
+          <TabNav activeTab={activeTab} onChangeTab={setActiveTab} />
+        </>
+      )}
 
-      {activeTab === "record" && (
+      {currentUser && activeTab === "record" && (
         <div className="tab-panel">
           <HelperBubble selectedEmotions={selectedEmotions} hasRecord={Boolean(currentRecord)} status={status} />
           <SelectedDateCard selectedDate={selectedDate} selectedEmotions={selectedEmotions} hasRecord={Boolean(currentRecord)} />
@@ -553,9 +606,9 @@ export function App() {
         </div>
       )}
 
-      {activeTab === "report" && <StatsPanel monthStats={monthStats} weeklyReport={weeklyReport} />}
+      {currentUser && activeTab === "report" && <StatsPanel monthStats={monthStats} weeklyReport={weeklyReport} />}
 
-      {activeTab === "search" && (
+      {currentUser && activeTab === "search" && (
         <SearchBox
           searchText={searchText}
           searchResults={searchResults}
@@ -564,7 +617,7 @@ export function App() {
         />
       )}
 
-      {activeTab === "settings" && (
+      {currentUser && activeTab === "settings" && (
         <div className="tab-panel">
           <AccountBox
             authUser={authUser}
@@ -625,4 +678,12 @@ function mergeLocalPhotos(cloudRecords, localRecords) {
   });
 
   return mergedRecords;
+}
+
+function getFriendlyErrorMessage(error) {
+  if (error?.code === "permission-denied") {
+    return "Firebase 보안 규칙에서 가족방 저장을 허용해야 해요.";
+  }
+
+  return error?.message || "잠시 후 다시 시도해 주세요.";
 }

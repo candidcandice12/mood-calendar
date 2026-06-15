@@ -16,10 +16,7 @@ export const emotions = [
   { emoji: "😮", name: "놀랐어", color: "#FDE68A" },
 ];
 
-export const defaultUsers = [
-  { name: "첫째", avatar: "🐰", password: "0000" },
-  { name: "둘째", avatar: "🐥", password: "0000" },
-];
+export const defaultUsers = [];
 
 export const avatarOptions = [
   "🐰", "🐥", "🐻", "🐼", "🦊", "🐶", "🐱", "🐹",

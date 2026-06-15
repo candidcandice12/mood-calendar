@@ -11,7 +11,7 @@ export function readJson(key, fallback) {
 
 export function normalizeUsers(savedUsers) {
   if (!Array.isArray(savedUsers) || savedUsers.length === 0) {
-    return [...defaultUsers];
+    return [];
   }
 
   return savedUsers.map((user, index) => {
