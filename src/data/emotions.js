@@ -34,6 +34,7 @@ export const emotions = [
   { categoryId: "fear", emoji: "😬", name: "긴장한", englishName: "Nervous", color: "#DDD6FE" },
   { categoryId: "fear", emoji: "😟", name: "걱정되는", englishName: "Worried", color: "#C7D2FE" },
   { categoryId: "fear", emoji: "😫", name: "스트레스받는", englishName: "Stressed", color: "#A5B4FC" },
+  { categoryId: "fear", emoji: "😮", name: "놀란", englishName: "Surprised", color: "#E0E7FF" },
 ];
 
 export const defaultUsers = [];

@@ -234,6 +234,37 @@ h2 {
   gap: 10px;
 }
 
+.browser-warning {
+  border-radius: 18px;
+  background: #fff8cc;
+  color: #5f6673;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.browser-warning p {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.soft-link-btn {
+  border-radius: 16px;
+  background: #eef7ff;
+  color: #5b6f82;
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 11px 15px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.mini-guide {
+  color: #888;
+}
+
 .user-title {
   font-size: 16px;
   font-weight: 800;

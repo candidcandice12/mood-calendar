@@ -2,6 +2,8 @@ import { useState } from "react";
 
 export function AccountBox({ authUser, familyId, onGoogleSignIn, onSignOut, onCreateFamily, onJoinFamily, onLeaveFamily }) {
   const [inviteCode, setInviteCode] = useState("");
+  const isBlockedBrowser = isGoogleBlockedBrowser();
+  const externalBrowserUrl = getExternalBrowserUrl();
 
   function submitInvite(event) {
     event.preventDefault();
@@ -23,7 +25,16 @@ export function AccountBox({ authUser, familyId, onGoogleSignIn, onSignOut, onCr
         ) : (
           <>
             <div className="account-label">로그인 전</div>
-            <button className="soft-btn" type="button" onClick={onGoogleSignIn}>Google로 로그인</button>
+            {isBlockedBrowser ? (
+              <div className="browser-warning">
+                <strong>앱 안 브라우저에서는 Google 로그인이 막힐 수 있어요.</strong>
+                <p>카카오톡, 인스타그램 같은 앱 안에서 열었다면 Chrome 또는 Safari로 다시 열어 주세요.</p>
+                {externalBrowserUrl && <a className="soft-link-btn" href={externalBrowserUrl}>Chrome으로 열기</a>}
+                <p className="mini-guide">iPhone은 오른쪽 위 메뉴에서 “Safari로 열기”를 눌러 주세요.</p>
+              </div>
+            ) : (
+              <button className="soft-btn" type="button" onClick={onGoogleSignIn}>Google로 로그인</button>
+            )}
           </>
         )}
       </div>
@@ -58,4 +69,25 @@ export function AccountBox({ authUser, familyId, onGoogleSignIn, onSignOut, onCr
       )}
     </section>
   );
+}
+
+function isGoogleBlockedBrowser() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return /KAKAOTALK|Instagram|FBAN|FBAV|Line|NAVER|DaumApps/i.test(navigator.userAgent);
+}
+
+function getExternalBrowserUrl() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return "";
+  }
+
+  if (/Android/i.test(navigator.userAgent)) {
+    const url = window.location.href.replace(/^https?:\/\//, "");
+    return `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+  }
+
+  return "";
 }
