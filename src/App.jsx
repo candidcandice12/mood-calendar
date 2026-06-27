@@ -382,8 +382,7 @@ export function App() {
       },
     }));
     setPhoto(nextPhotoUrl || nextPhoto);
-    setStatus("참 잘했어요! 오늘 마음 기록을 저장했어요.");
-    alert("저장되었습니다.");
+    setStatus(getSaveStatusMessage(Boolean(currentRecord)));
   }
 
   async function deleteRecord() {
@@ -710,6 +709,19 @@ function askNewPassword() {
   }
 
   return password;
+}
+
+function getSaveStatusMessage(wasEditing) {
+  const savedAt = new Date().toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (wasEditing) {
+    return `수정 완료! 오늘 마음 기록을 바꿨어요. ${savedAt}`;
+  }
+
+  return `처음 기록했어요! 오늘 마음을 저장했어요. ${savedAt}`;
 }
 
 function mergeLocalPhotos(cloudRecords, localRecords) {
