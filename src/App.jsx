@@ -14,6 +14,7 @@ import { defaultUsers } from "./data/emotions";
 import { isFirebaseConfigured, missingFirebaseConfigKeys, signInWithGoogle, signOutFromFirebase, subscribeToFirebaseAuth } from "./firebase";
 import { createFamilyRoom, deleteCloudRecord, joinFamilyRoom, loadCloudState, saveCloudState } from "./services/cloudDataService";
 import { deleteRecordPhoto } from "./services/photoStorageService";
+import { deleteLocalPhoto, getLocalPhotoId, loadLocalPhoto, saveLocalPhoto } from "./services/localPhotoService";
 import { formatDate } from "./utils/date";
 import { getSavedCurrentUserName, normalizeUsers, readJson } from "./utils/storage";
 import { createFamilySecret } from "./utils/crypto";
@@ -181,10 +182,27 @@ export function App() {
 
     const record = records[currentUser.name]?.[selectedDate];
 
+    let isMounted = true;
+
+    async function loadRecordPhoto(recordToLoad) {
+      if (recordToLoad?.photoLocalId) {
+        try {
+          const localPhoto = await loadLocalPhoto(recordToLoad.photoLocalId);
+
+          if (isMounted && localPhoto) {
+            setPhoto(localPhoto);
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+
     if (record) {
       setSelectedEmotions(getRecordEmotions(record));
       setMemo(record.memo || "");
       setPhoto(record.photo || record.photoUrl || "");
+      loadRecordPhoto(record);
     } else {
       setSelectedEmotions([]);
       setMemo("");
@@ -192,6 +210,10 @@ export function App() {
     }
 
     setStatus("");
+
+    return () => {
+      isMounted = false;
+    };
   }, [records, currentUser?.name, selectedDate]);
 
   function addUser(newUser) {
@@ -324,13 +346,24 @@ export function App() {
       return;
     }
 
-    const nextPhoto = photo?.startsWith("data:") ? photo : "";
+    let nextPhoto = "";
+    let nextPhotoLocalId = currentRecord?.photoLocalId || "";
     let nextPhotoUrl = photo?.startsWith("http") ? photo : currentRecord?.photoUrl || "";
     let nextPhotoPath = currentRecord?.photoPath || "";
 
+    if (photo?.startsWith("data:")) {
+      nextPhotoLocalId = getLocalPhotoId(currentUser.name, selectedDate);
+      await saveLocalPhoto(nextPhotoLocalId, photo);
+    }
+
     if (!photo) {
+      if (currentRecord?.photoLocalId) {
+        await deleteLocalPhoto(currentRecord.photoLocalId);
+      }
+
       nextPhotoUrl = "";
       nextPhotoPath = "";
+      nextPhotoLocalId = "";
     }
 
     setRecords((prevRecords) => ({
@@ -341,6 +374,7 @@ export function App() {
           emotions: selectedEmotions,
           memo: memo.trim(),
           photo: nextPhoto,
+          photoLocalId: nextPhotoLocalId,
           photoUrl: nextPhotoUrl,
           photoPath: nextPhotoPath,
           updatedAt: new Date().toISOString(),
@@ -370,6 +404,10 @@ export function App() {
     try {
       if (currentRecord.photoPath) {
         await deleteRecordPhoto(currentRecord.photoPath);
+      }
+
+      if (currentRecord.photoLocalId) {
+        await deleteLocalPhoto(currentRecord.photoLocalId);
       }
 
       await deleteCloudRecord(currentUser.name, selectedDate, familyId);

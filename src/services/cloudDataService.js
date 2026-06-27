@@ -35,7 +35,8 @@ export async function loadCloudState(familyId = "", familyKey = "") {
     records[record.userName][record.date] = {
       emotions: record.emotions || [],
       memo: record.memo || "",
-      photo: record.photo || "",
+      photo: "",
+      photoLocalId: record.photoLocalId || "",
       photoUrl: record.photoUrl || "",
       photoPath: record.photoPath || "",
       updatedAt: record.updatedAt || "",
@@ -73,11 +74,12 @@ export async function saveCloudState(state, familyId = "", familyKey = "") {
   }
 
   if (familyId) {
+    const cloudState = normalizeStateForCloud(state);
     await ensureFamilyMember(familyId, user);
     await setDoc(getAppStateRef(user.uid, familyId), {
       encrypted: true,
-      encryptedPayload: await encryptJson(state, familyKey),
-      recordCount: getRecordCount(state.emotionRecordsByUser || {}),
+      encryptedPayload: await encryptJson(cloudState, familyKey),
+      recordCount: getRecordCount(cloudState.emotionRecordsByUser || {}),
       updatedAt: serverTimestamp(),
     });
     await deleteAllRecords(user.uid, familyId);
@@ -90,7 +92,7 @@ export async function saveCloudState(state, familyId = "", familyKey = "") {
     updatedAt: serverTimestamp(),
   });
 
-  await replaceRecords(user.uid, state.emotionRecordsByUser || {}, familyId);
+  await replaceRecords(user.uid, normalizeStateForCloud(state).emotionRecordsByUser || {}, familyId);
 }
 
 export async function deleteCloudRecord(userName, date, familyId = "") {
@@ -198,10 +200,32 @@ function normalizeRecordForCloud(userName, date, record) {
     date,
     emotions: record.emotions || [],
     memo: record.memo || "",
-    photo: record.photo || "",
+    photo: "",
+    photoLocalId: record.photoLocalId || "",
     photoUrl: record.photoUrl || (!record.photo?.startsWith("data:") ? record.photo || "" : ""),
     photoPath: record.photoPath || "",
     updatedAt: record.updatedAt || new Date().toISOString(),
+  };
+}
+
+function normalizeStateForCloud(state) {
+  return {
+    ...state,
+    emotionRecordsByUser: Object.fromEntries(
+      Object.entries(state.emotionRecordsByUser || {}).map(([userName, userRecords]) => [
+        userName,
+        Object.fromEntries(
+          Object.entries(userRecords || {}).map(([date, record]) => [
+            date,
+            {
+              ...record,
+              photo: "",
+              photoLocalId: record.photoLocalId || "",
+            },
+          ]),
+        ),
+      ]),
+    ),
   };
 }
 
