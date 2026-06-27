@@ -265,6 +265,29 @@ h2 {
   color: #888;
 }
 
+.share-link-box {
+  border-radius: 18px;
+  background: #fffdfd;
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 12px;
+}
+
+.share-link-box span {
+  color: #6f7f95;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.share-link-box input {
+  border: 2px solid #dff4ff;
+  border-radius: 14px;
+  color: #5f6673;
+  font-size: 12px;
+  padding: 10px;
+}
+
 .user-title {
   font-size: 16px;
   font-weight: 800;

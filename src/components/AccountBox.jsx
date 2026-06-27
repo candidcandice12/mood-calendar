@@ -1,13 +1,25 @@
 import { useState } from "react";
 
-export function AccountBox({ authUser, familyId, onGoogleSignIn, onSignOut, onCreateFamily, onJoinFamily, onLeaveFamily }) {
+export function AccountBox({
+  authUser,
+  familyId,
+  familyKey,
+  familyShareLink,
+  onGoogleSignIn,
+  onSignOut,
+  onCreateFamily,
+  onJoinFamily,
+  onLeaveFamily,
+  onCopyFamilyShareLink,
+}) {
   const [inviteCode, setInviteCode] = useState("");
+  const [inviteKey, setInviteKey] = useState("");
   const isBlockedBrowser = isGoogleBlockedBrowser();
   const externalBrowserUrl = getExternalBrowserUrl();
 
   function submitInvite(event) {
     event.preventDefault();
-    onJoinFamily(inviteCode);
+    onJoinFamily(inviteCode, inviteKey);
   }
 
   return (
@@ -45,7 +57,17 @@ export function AccountBox({ authUser, familyId, onGoogleSignIn, onSignOut, onCr
             <>
               <div className="account-label">우리 가족방 초대 코드</div>
               <div className="invite-code">{familyId}</div>
-              <p className="hint">가족에게 이 코드를 알려주세요. 같은 코드로 들어오면 기록을 함께 사용해요.</p>
+              <p className="hint">마음 기록은 이 브라우저에서 암호화해서 저장해요. 개발자도 Firebase에서 기록 내용을 읽을 수 없어요.</p>
+              {familyKey ? (
+                <div className="share-link-box">
+                  <span>가족 초대 링크</span>
+                  <input readOnly value={familyShareLink} onFocus={(event) => event.target.select()} />
+                  <button className="soft-btn" type="button" onClick={onCopyFamilyShareLink}>초대 링크 복사</button>
+                  <p className="mini-guide">이 링크의 #key 부분이 암호키예요. Firebase에는 저장되지 않으니 가족에게만 보내주세요.</p>
+                </div>
+              ) : (
+                <p className="form-error">암호키가 없어서 가족 기록을 열 수 없어요. 초대 링크로 다시 들어와 주세요.</p>
+              )}
               <button className="small-soft-btn" type="button" onClick={onLeaveFamily}>가족방 나가기</button>
             </>
           ) : (
@@ -61,7 +83,17 @@ export function AccountBox({ authUser, familyId, onGoogleSignIn, onSignOut, onCr
                     onChange={(event) => setInviteCode(event.target.value)}
                   />
                 </label>
+                <label className="form-field">
+                  <span>가족방 암호키</span>
+                  <input
+                    type="text"
+                    value={inviteKey}
+                    placeholder="초대 링크의 #key 값"
+                    onChange={(event) => setInviteKey(event.target.value.trim())}
+                  />
+                </label>
                 <button className="soft-btn" type="submit">가족방 참여하기</button>
+                <p className="mini-guide">초대 링크로 들어오면 코드와 암호키가 자동으로 저장돼요.</p>
               </form>
             </>
           )}

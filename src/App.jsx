@@ -13,13 +13,15 @@ import { UserManager } from "./components/UserManager";
 import { defaultUsers } from "./data/emotions";
 import { isFirebaseConfigured, missingFirebaseConfigKeys, signInWithGoogle, signOutFromFirebase, subscribeToFirebaseAuth } from "./firebase";
 import { createFamilyRoom, deleteCloudRecord, joinFamilyRoom, loadCloudState, saveCloudState } from "./services/cloudDataService";
-import { deleteRecordPhoto, uploadRecordPhoto } from "./services/photoStorageService";
+import { deleteRecordPhoto } from "./services/photoStorageService";
 import { formatDate } from "./utils/date";
 import { getSavedCurrentUserName, normalizeUsers, readJson } from "./utils/storage";
+import { createFamilySecret } from "./utils/crypto";
 import { resizeImage } from "./utils/photo";
 import { getMonthStats, getRecordEmotions, getSearchResults, getWeeklyReport } from "./utils/stats";
 
 const today = new Date();
+const initialFamilyAccess = getInitialFamilyAccess();
 
 function getInitialCloudStatus() {
   if (isFirebaseConfigured) {
@@ -45,7 +47,8 @@ export function App() {
   const [isCloudLoaded, setIsCloudLoaded] = useState(!isFirebaseConfigured);
   const [authUser, setAuthUser] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(!isFirebaseConfigured);
-  const [familyId, setFamilyId] = useState(() => localStorage.getItem("emotionFamilyId") || "");
+  const [familyId, setFamilyId] = useState(initialFamilyAccess.familyId);
+  const [familyKey, setFamilyKey] = useState(initialFamilyAccess.familyKey);
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("record");
 
@@ -91,21 +94,29 @@ export function App() {
   useEffect(() => {
     if (familyId) {
       localStorage.setItem("emotionFamilyId", familyId);
+      if (familyKey) {
+        localStorage.setItem(getFamilyKeyStorageKey(familyId), familyKey);
+      }
     } else {
       localStorage.removeItem("emotionFamilyId");
     }
-  }, [familyId]);
+  }, [familyId, familyKey]);
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
     if (!isAuthReady || !authUser) return;
+    if (familyId && !familyKey) {
+      setCloudStatus("가족방 암호키가 필요해요. 초대 링크로 다시 들어와 주세요.");
+      setIsCloudLoaded(true);
+      return;
+    }
 
     let isMounted = true;
 
     async function loadState() {
       try {
         setIsCloudLoaded(false);
-        const cloudState = await loadCloudState(familyId);
+        const cloudState = await loadCloudState(familyId, familyKey);
 
         if (!isMounted) return;
 
@@ -120,7 +131,7 @@ export function App() {
           setCloudStatus(familyId ? "가족방에 새 기록을 만들 준비가 됐어요" : "클라우드에 새 기록을 만들 준비가 됐어요");
         }
       } catch (error) {
-        setCloudStatus("클라우드 연결 실패: 로컬에 저장 중");
+        setCloudStatus(`클라우드 연결 실패: ${getFriendlyErrorMessage(error)}`);
         console.error(error);
       } finally {
         if (isMounted) {
@@ -134,12 +145,13 @@ export function App() {
     return () => {
       isMounted = false;
     };
-  }, [authUser, familyId, isAuthReady]);
+  }, [authUser, familyId, familyKey, isAuthReady]);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !isCloudLoaded) return;
     if (!isAuthReady || !authUser) return;
     if (!currentUser) return;
+    if (familyId && !familyKey) return;
 
     const timeoutId = window.setTimeout(async () => {
       try {
@@ -147,7 +159,7 @@ export function App() {
           emotionUsers: users,
           currentEmotionUser: currentUser.name,
           emotionRecordsByUser: records,
-        }, familyId);
+        }, familyId, familyKey);
         setCloudStatus(familyId ? "가족방에 저장됐어요" : "클라우드에 저장됐어요");
       } catch (error) {
         setCloudStatus("클라우드 저장 실패: 로컬에는 저장됐어요");
@@ -156,7 +168,7 @@ export function App() {
     }, 800);
 
     return () => window.clearTimeout(timeoutId);
-  }, [users, currentUser, records, familyId, authUser, isAuthReady, isCloudLoaded]);
+  }, [users, currentUser, records, familyId, familyKey, authUser, isAuthReady, isCloudLoaded]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -312,34 +324,13 @@ export function App() {
       return;
     }
 
-    let nextPhoto = photo;
-    let nextPhotoUrl = currentRecord?.photoUrl || "";
+    const nextPhoto = photo?.startsWith("data:") ? photo : "";
+    let nextPhotoUrl = photo?.startsWith("http") ? photo : currentRecord?.photoUrl || "";
     let nextPhotoPath = currentRecord?.photoPath || "";
-    let photoStatusMessage = "";
 
-    try {
-      if (isFirebaseConfigured && photo?.startsWith("data:")) {
-        if (currentRecord?.photoPath) {
-          await deleteRecordPhoto(currentRecord.photoPath);
-        }
-
-        const uploadedPhoto = await uploadRecordPhoto(currentUser.name, selectedDate, photo, familyId);
-        nextPhoto = "";
-        nextPhotoUrl = uploadedPhoto?.photoUrl || "";
-        nextPhotoPath = uploadedPhoto?.photoPath || "";
-      }
-
-      if (isFirebaseConfigured && !photo && currentRecord?.photoPath) {
-        await deleteRecordPhoto(currentRecord.photoPath);
-        nextPhotoUrl = "";
-        nextPhotoPath = "";
-      }
-    } catch (error) {
-      nextPhoto = photo;
-      nextPhotoUrl = currentRecord?.photoUrl || "";
-      nextPhotoPath = currentRecord?.photoPath || "";
-      photoStatusMessage = " 사진은 이 브라우저에만 저장했어요.";
-      console.error(error);
+    if (!photo) {
+      nextPhotoUrl = "";
+      nextPhotoPath = "";
     }
 
     setRecords((prevRecords) => ({
@@ -349,7 +340,7 @@ export function App() {
         [selectedDate]: {
           emotions: selectedEmotions,
           memo: memo.trim(),
-          photo: nextPhotoUrl ? "" : nextPhoto,
+          photo: nextPhoto,
           photoUrl: nextPhotoUrl,
           photoPath: nextPhotoPath,
           updatedAt: new Date().toISOString(),
@@ -357,7 +348,7 @@ export function App() {
       },
     }));
     setPhoto(nextPhotoUrl || nextPhoto);
-    setStatus(`참 잘했어요! 오늘 마음 기록을 저장했어요.${photoStatusMessage}`);
+    setStatus("참 잘했어요! 오늘 마음 기록을 저장했어요.");
     alert("저장되었습니다.");
   }
 
@@ -443,6 +434,7 @@ export function App() {
     try {
       await signOutFromFirebase();
       setFamilyId("");
+      setFamilyKey("");
       setCloudStatus("로그아웃했어요. 로컬 저장 모드입니다.");
     } catch (error) {
       setCloudStatus("로그아웃 중 문제가 있었어요.");
@@ -462,12 +454,14 @@ export function App() {
     }
 
     try {
+      const nextFamilyKey = createFamilySecret();
       const nextFamilyId = await createFamilyRoom({
         emotionUsers: users,
         currentEmotionUser: currentUser.name,
         emotionRecordsByUser: records,
-      });
+      }, nextFamilyKey);
       setFamilyId(nextFamilyId);
+      setFamilyKey(nextFamilyKey);
       setCloudStatus(`가족방을 만들었어요. 초대 코드: ${nextFamilyId}`);
       setActiveTab("settings");
     } catch (error) {
@@ -476,7 +470,7 @@ export function App() {
     }
   }
 
-  async function handleJoinFamily(inviteCode) {
+  async function handleJoinFamily(inviteCode, inviteKey) {
     if (!authUser?.email) {
       setStatus("먼저 Google로 로그인해 주세요.");
       return;
@@ -485,6 +479,7 @@ export function App() {
     try {
       const nextFamilyId = await joinFamilyRoom(inviteCode);
       setFamilyId(nextFamilyId);
+      setFamilyKey(inviteKey || localStorage.getItem(getFamilyKeyStorageKey(nextFamilyId)) || "");
       setCloudStatus("가족방에 참여했어요. 가족 기록을 불러올게요.");
       setActiveTab("settings");
     } catch (error) {
@@ -499,7 +494,25 @@ export function App() {
     if (!ok) return;
 
     setFamilyId("");
+    setFamilyKey("");
     setCloudStatus("가족방 연결을 해제했어요. 개인 클라우드 저장으로 전환합니다.");
+  }
+
+  async function copyFamilyShareLink() {
+    if (!familyId || !familyKey) {
+      setCloudStatus("공유 링크를 만들 암호키가 없어요.");
+      return;
+    }
+
+    const shareLink = getFamilyShareLink(familyId, familyKey);
+
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCloudStatus("가족방 초대 링크를 복사했어요.");
+    } catch (error) {
+      prompt("가족에게 이 링크를 보내주세요.", shareLink);
+      console.error(error);
+    }
   }
 
   function exportBackup() {
@@ -622,11 +635,14 @@ export function App() {
           <AccountBox
             authUser={authUser}
             familyId={familyId}
+            familyKey={familyKey}
+            familyShareLink={familyId && familyKey ? getFamilyShareLink(familyId, familyKey) : ""}
             onGoogleSignIn={handleGoogleSignIn}
             onSignOut={handleSignOut}
             onCreateFamily={handleCreateFamily}
             onJoinFamily={handleJoinFamily}
             onLeaveFamily={handleLeaveFamily}
+            onCopyFamilyShareLink={copyFamilyShareLink}
           />
           <BackupBox onExportBackup={exportBackup} onImportBackup={importBackup} />
         </div>
@@ -685,5 +701,41 @@ function getFriendlyErrorMessage(error) {
     return "Firebase 보안 규칙에서 가족방 저장을 허용해야 해요.";
   }
 
+  if (/decrypt|암호|key|operation/i.test(error?.message || "")) {
+    return "가족방 암호키가 맞지 않거나 없어요. 초대 링크로 다시 들어와 주세요.";
+  }
+
   return error?.message || "잠시 후 다시 시도해 주세요.";
+}
+
+function getInitialFamilyAccess() {
+  if (typeof window === "undefined") {
+    return { familyId: "", familyKey: "" };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const familyId = normalizeFamilyId(params.get("join") || localStorage.getItem("emotionFamilyId") || "");
+  const familyKey = hashParams.get("key") || (familyId ? localStorage.getItem(getFamilyKeyStorageKey(familyId)) : "") || "";
+
+  if (familyId && familyKey) {
+    localStorage.setItem("emotionFamilyId", familyId);
+    localStorage.setItem(getFamilyKeyStorageKey(familyId), familyKey);
+  }
+
+  return { familyId, familyKey };
+}
+
+function getFamilyShareLink(familyId, familyKey) {
+  const url = new URL(window.location.origin + window.location.pathname);
+  url.searchParams.set("join", familyId);
+  return `${url.toString()}#key=${encodeURIComponent(familyKey)}`;
+}
+
+function getFamilyKeyStorageKey(familyId) {
+  return `emotionFamilyKey:${familyId}`;
+}
+
+function normalizeFamilyId(familyId) {
+  return String(familyId || "").trim().toUpperCase();
 }

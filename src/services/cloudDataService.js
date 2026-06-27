@@ -1,7 +1,8 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { db, isFirebaseConfigured, signInToFirebase } from "../firebase";
+import { decryptJson, encryptJson } from "../utils/crypto";
 
-export async function loadCloudState(familyId = "") {
+export async function loadCloudState(familyId = "", familyKey = "") {
   if (!isFirebaseConfigured || !db) {
     return null;
   }
@@ -34,6 +35,7 @@ export async function loadCloudState(familyId = "") {
     records[record.userName][record.date] = {
       emotions: record.emotions || [],
       memo: record.memo || "",
+      photo: record.photo || "",
       photoUrl: record.photoUrl || "",
       photoPath: record.photoPath || "",
       updatedAt: record.updatedAt || "",
@@ -41,6 +43,11 @@ export async function loadCloudState(familyId = "") {
   });
 
   const appStateData = appStateSnapshot.exists() ? appStateSnapshot.data() : {};
+
+  if (familyId && appStateData.encryptedPayload) {
+    return decryptJson(appStateData.encryptedPayload, familyKey);
+  }
+
   const appState = appStateData.state || appStateData;
 
   if (Object.keys(records).length === 0 && appState.emotionRecordsByUser) {
@@ -54,7 +61,7 @@ export async function loadCloudState(familyId = "") {
   };
 }
 
-export async function saveCloudState(state, familyId = "") {
+export async function saveCloudState(state, familyId = "", familyKey = "") {
   if (!isFirebaseConfigured || !db) {
     return;
   }
@@ -67,6 +74,14 @@ export async function saveCloudState(state, familyId = "") {
 
   if (familyId) {
     await ensureFamilyMember(familyId, user);
+    await setDoc(getAppStateRef(user.uid, familyId), {
+      encrypted: true,
+      encryptedPayload: await encryptJson(state, familyKey),
+      recordCount: getRecordCount(state.emotionRecordsByUser || {}),
+      updatedAt: serverTimestamp(),
+    });
+    await deleteAllRecords(user.uid, familyId);
+    return;
   }
 
   await setDoc(getAppStateRef(user.uid, familyId), {
@@ -92,7 +107,7 @@ export async function deleteCloudRecord(userName, date, familyId = "") {
   await deleteDoc(getRecordDocRef(user.uid, userName, date, familyId));
 }
 
-export async function createFamilyRoom(state) {
+export async function createFamilyRoom(state, familyKey) {
   if (!isFirebaseConfigured || !db) {
     return "";
   }
@@ -107,9 +122,10 @@ export async function createFamilyRoom(state) {
   await setDoc(getFamilyRef(familyId), {
     createdBy: user.uid,
     createdAt: serverTimestamp(),
+    encrypted: true,
     updatedAt: serverTimestamp(),
   });
-  await saveCloudState(state, familyId);
+  await saveCloudState(state, familyId, familyKey);
   return familyId;
 }
 
@@ -162,12 +178,27 @@ async function replaceRecords(uid, recordsByUser, familyId = "") {
   await batch.commit();
 }
 
+async function deleteAllRecords(uid, familyId = "") {
+  const existingRecords = await getDocs(getRecordsCollectionRef(uid, familyId));
+
+  if (existingRecords.empty) {
+    return;
+  }
+
+  const batch = writeBatch(db);
+  existingRecords.forEach((recordDoc) => {
+    batch.delete(recordDoc.ref);
+  });
+  await batch.commit();
+}
+
 function normalizeRecordForCloud(userName, date, record) {
   return {
     userName,
     date,
     emotions: record.emotions || [],
     memo: record.memo || "",
+    photo: record.photo || "",
     photoUrl: record.photoUrl || (!record.photo?.startsWith("data:") ? record.photo || "" : ""),
     photoPath: record.photoPath || "",
     updatedAt: record.updatedAt || new Date().toISOString(),
@@ -217,6 +248,10 @@ function getFamilyMemberRef(familyId, uid) {
 
 function getRecordId(userName, date) {
   return `${encodeURIComponent(userName)}__${date}`;
+}
+
+function getRecordCount(recordsByUser) {
+  return Object.values(recordsByUser).reduce((count, userRecords) => count + Object.keys(userRecords || {}).length, 0);
 }
 
 function createInviteCode() {

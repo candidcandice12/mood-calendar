@@ -1,4 +1,4 @@
-export function resizeImage(file, maxSize = 520, quality = 0.58) {
+export function resizeImage(file, maxSize = 420, quality = 0.48) {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
       reject(new Error("이미지 파일만 선택할 수 있어요."));
