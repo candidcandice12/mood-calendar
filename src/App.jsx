@@ -209,8 +209,6 @@ export function App() {
       setPhoto("");
     }
 
-    setStatus("");
-
     return () => {
       isMounted = false;
     };

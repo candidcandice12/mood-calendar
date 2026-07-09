@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마음 캘린더 경쟁 앱 분석</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #243044;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --paper: #fffaf3;
+        --card: #ffffff;
+        --mint: #dff7ec;
+        --pink: #ffe4ef;
+        --blue: #e4f0ff;
+        --yellow: #fff1bf;
+        --violet: #ede7ff;
+        --green: #86d9ad;
+        --shadow: 0 18px 45px rgba(36, 48, 68, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(255, 228, 239, 0.75), transparent 34rem),
+          radial-gradient(circle at top right, rgba(228, 240, 255, 0.95), transparent 30rem),
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui,
+          -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.65;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .page {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 42px 0 72px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+        gap: 28px;
+        align-items: center;
+        min-height: 420px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 1px solid rgba(36, 48, 68, 0.1);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+      }
+
+      h1 {
+        margin-top: 18px;
+        font-size: clamp(40px, 7vw, 78px);
+      }
+
+      .hero p {
+        max-width: 700px;
+        margin: 22px 0 0;
+        color: #4b5563;
+        font-size: 19px;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 10px 15px;
+        background: var(--card);
+        box-shadow: 0 8px 20px rgba(36, 48, 68, 0.08);
+        color: #334155;
+        font-weight: 800;
+      }
+
+      .summary-card,
+      .section,
+      .app-card,
+      .insight-card {
+        border: 1px solid rgba(36, 48, 68, 0.08);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: var(--shadow);
+      }
+
+      .summary-card {
+        padding: 24px;
+      }
+
+      .summary-card h2 {
+        font-size: 28px;
+      }
+
+      .score-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .score-item {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border-radius: 18px;
+        background: #f8fafc;
+      }
+
+      .rank {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border-radius: 12px;
+        background: var(--ink);
+        color: #fff;
+        font-weight: 900;
+      }
+
+      .score-item strong {
+        display: block;
+      }
+
+      .score-item span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: var(--yellow);
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .section {
+        margin-top: 34px;
+        padding: 30px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      .section-head p {
+        max-width: 620px;
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #fff;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 840px;
+      }
+
+      th,
+      td {
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f8fafc;
+        font-size: 13px;
+        color: #475569;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .apps {
+        display: grid;
+        gap: 24px;
+        margin-top: 22px;
+      }
+
+      .app-card {
+        display: grid;
+        grid-template-columns: 310px 1fr;
+        gap: 28px;
+        overflow: hidden;
+        padding: 24px;
+      }
+
+      .phone {
+        position: relative;
+        width: 250px;
+        min-height: 500px;
+        margin: 0 auto;
+        padding: 16px;
+        border: 9px solid #1f2937;
+        border-radius: 38px;
+        background: #fff;
+        box-shadow: 0 24px 52px rgba(15, 23, 42, 0.18);
+      }
+
+      .phone::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        width: 76px;
+        height: 18px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: #111827;
+      }
+
+      .screen {
+        min-height: 450px;
+        padding: 34px 14px 16px;
+        border-radius: 26px;
+        background: linear-gradient(180deg, var(--mock-bg), #fff);
+        overflow: hidden;
+      }
+
+      .mock-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        font-weight: 900;
+      }
+
+      .mock-calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+      }
+
+      .mock-day {
+        display: grid;
+        height: 25px;
+        place-items: center;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .mock-day.is-on {
+        background: var(--mock-accent);
+        color: #1f2937;
+      }
+
+      .mock-emotions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 16px 0;
+      }
+
+      .mock-emotion {
+        display: grid;
+        height: 56px;
+        place-items: center;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+        font-size: 24px;
+      }
+
+      .mock-note,
+      .mock-chart,
+      .mock-photo,
+      .mock-room,
+      .mock-pet,
+      .mock-ai {
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.76);
+        padding: 14px;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      }
+
+      .mock-note {
+        margin-top: 12px;
+        color: #475569;
+        font-size: 13px;
+      }
+
+      .mock-bars {
+        display: grid;
+        gap: 7px;
+        margin-top: 12px;
+      }
+
+      .mock-bar {
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--mock-accent), rgba(255, 255, 255, 0.7));
+      }
+
+      .mock-photo {
+        display: grid;
+        height: 120px;
+        place-items: center;
+        margin-top: 14px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.42)),
+          radial-gradient(circle at 70% 26%, var(--mock-accent), transparent 38%),
+          linear-gradient(135deg, #c7d2fe, #fbcfe8);
+        color: #334155;
+        font-weight: 900;
+      }
+
+      .mock-room {
+        display: grid;
+        height: 150px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .mock-furniture {
+        border-radius: 18px;
+        background: var(--mock-accent);
+        opacity: 0.85;
+      }
+
+      .mock-pet {
+        display: grid;
+        height: 132px;
+        place-items: center;
+        margin-top: 12px;
+        font-size: 64px;
+      }
+
+      .mock-ai {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .bubble {
+        max-width: 90%;
+        border-radius: 16px;
+        padding: 10px;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+      }
+
+      .bubble.user {
+        justify-self: end;
+        background: var(--mock-accent);
+        color: #1f2937;
+      }
+
+      .app-copy h3 {
+        font-size: 31px;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 12px 0 18px;
+      }
+
+      .meta span {
+        border-radius: 999px;
+        padding: 7px 11px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .cols {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .mini {
+        min-height: 100%;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px;
+        background: #fff;
+      }
+
+      .mini h4 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+
+      .mini ul,
+      .check-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .mini li,
+      .check-list li {
+        margin: 6px 0;
+      }
+
+      .insights {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 22px;
+      }
+
+      .insight-card {
+        padding: 20px;
+      }
+
+      .insight-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 18px;
+      }
+
+      .note {
+        margin-top: 22px;
+        border-left: 5px solid var(--green);
+        border-radius: 18px;
+        padding: 16px 18px;
+        background: #f0fdf4;
+        color: #365345;
+      }
+
+      @media (max-width: 920px) {
+        .hero,
+        .app-card,
+        .cols,
+        .insights {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head {
+          align-items: start;
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .page {
+          width: min(100% - 20px, 1180px);
+          padding-top: 22px;
+        }
+
+        .section,
+        .summary-card,
+        .app-card {
+          border-radius: 22px;
+          padding: 18px;
+        }
+
+        .phone {
+          width: 225px;
+          min-height: 462px;
+        }
+
+        .screen {
+          min-height: 412px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">2026.06 기준 · 감정 기록 앱 경쟁 분석</span>
+          <h1>마음 캘린더가 이길 수 있는 자리</h1>
+          <p>
+            Google Play와 App Store에서 확인한 대표 감정 기록/마음 기록 앱을
+            비교하고, 각 앱의 사용 장면을 이미지형 mockup으로 정리했습니다.
+            공개 스토어 지표와 리뷰 흐름을 바탕으로 우리 앱의 차별화 방향을
+            도출했습니다.
+          </p>
+          <div class="hero-actions">
+            <span class="pill">핵심 차별점: 가족 공유</span>
+            <span class="pill">강점: 아이 감정 문해력</span>
+            <span class="pill">신뢰 포인트: 가족방 암호화</span>
+          </div>
+        </div>
+        <aside class="summary-card">
+          <h2>한눈에 보는 강자</h2>
+          <div class="score-list">
+            <div class="score-item">
+              <span class="rank">1</span>
+              <div><strong>Daylio</strong><span>글로벌 기분 추적 표준</span></div>
+              <span class="badge">1,000만+</span>
+            </div>
+            <div class="score-item">
+              <span class="rank">2</span>
+              <div><strong>하루콩</strong><span>한국형 감정 캘린더 강자</span></div>
+              <span class="badge">100만+</span>
+            </div>
+            <div class="score-item">
+              <span class="rank">3</span>
+              <div><strong>데이블룸</strong><span>감사일기/확언 특화</span></div>
+              <span class="badge">감성 브랜딩</span>
+            </div>
+            <div class="score-item">
+              <span class="rank">4</span>
+              <div><strong>MOODA</strong><span>방 꾸미기와 공유</span></div>
+              <span class="badge">소셜 감성</span>
+            </div>
+            <div class="score-item">
+              <span class="rank">5</span>
+              <div><strong>마인디</strong><span>CBT와 AI 상담형 기록</span></div>
+              <span class="badge">심리학 기반</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>스토어 공개 지표 요약</h2>
+            <p>
+              다운로드 수는 Google Play에서 공개된 범위를 사용했습니다. App
+              Store는 다운로드 수를 공개하지 않아 평점 수를 규모의 참고 지표로
+              사용했습니다.
+            </p>
+          </div>
+          <span class="pill">정확한 MAU/DAU는 비공개</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>앱</th>
+                <th>플랫폼</th>
+                <th>공개 규모/평점</th>
+                <th>가격</th>
+                <th>핵심 포지션</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Daylio</strong></td>
+                <td>Google Play</td>
+                <td>1,000만+ 다운로드 · 4.8 · 리뷰 약 45.6만</td>
+                <td>무료 · 광고 · 인앱결제 · Play Pass</td>
+                <td>기분 추적, 활동 분석, 통계, 백업의 글로벌 표준</td>
+              </tr>
+              <tr>
+                <td><strong>데이블룸</strong></td>
+                <td>Google Play</td>
+                <td>5만+ 다운로드 · 4.9 · 리뷰 약 2.8천</td>
+                <td>무료 · 인앱결제</td>
+                <td>감사일기, 확언, 정원 콘셉트</td>
+              </tr>
+              <tr>
+                <td><strong>기분일기 Mood Tracker</strong></td>
+                <td>Google Play</td>
+                <td>100만+ 다운로드 · 4.7 · 리뷰 약 2.1만</td>
+                <td>무료 · 광고 · 인앱결제</td>
+                <td>펫 육성, 습관, 감정 기록 결합</td>
+              </tr>
+              <tr>
+                <td><strong>하루콩</strong></td>
+                <td>Google Play / App Store</td>
+                <td>100만+ 다운로드 · iOS 4.83 · 평점 약 32,950개</td>
+                <td>무료 · 광고 · 인앱결제</td>
+                <td>한국형 감정 캘린더 대표 앱</td>
+              </tr>
+              <tr>
+                <td><strong>심플 일기장</strong></td>
+                <td>Google Play</td>
+                <td>50만+ 다운로드 · 4.9 · 리뷰 약 1.7만</td>
+                <td>무료 · 광고 · 인앱결제</td>
+                <td>사진, 태그, 잠금 중심의 심플 다이어리</td>
+              </tr>
+              <tr>
+                <td><strong>MOODA</strong></td>
+                <td>App Store</td>
+                <td>4.61 · 평점 약 8,829개</td>
+                <td>무료 · 인앱결제</td>
+                <td>방 꾸미기, 감정 일기, 친구 공유</td>
+              </tr>
+              <tr>
+                <td><strong>꼬박일기</strong></td>
+                <td>App Store</td>
+                <td>4.65 · 평점 약 12,243개</td>
+                <td>무료 · 인앱결제</td>
+                <td>습관형 일기, 사진, 타임라인, 위젯</td>
+              </tr>
+              <tr>
+                <td><strong>마인디</strong></td>
+                <td>App Store</td>
+                <td>4.78 · 평점 약 272개</td>
+                <td>무료 · 인앱결제 추정</td>
+                <td>CBT 기반 감정일기와 AI 상담</td>
+              </tr>
+              <tr>
+                <td><strong>구름모드</strong></td>
+                <td>App Store</td>
+                <td>4.83 · 평점 약 12개</td>
+                <td>무료</td>
+                <td>로컬 저장 중심의 간단한 감정 기록</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>앱별 사용 이미지와 분석</h2>
+            <p>
+              아래 이미지는 실제 스토어 스크린샷이 아니라, 각 앱의 공개 기능을
+              바탕으로 재구성한 사용 흐름 mockup입니다. 기능 이해와 발표용
+              비교에 사용하기 좋습니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="apps">
+          <article class="app-card" style="--mock-bg: #eaf7ff; --mock-accent: #a7d8ff">
+            <div class="phone" aria-label="Daylio 사용 이미지 mockup">
+              <div class="screen">
+                <div class="mock-title"><span>Daylio</span><span>📊</span></div>
+                <div class="mock-emotions">
+                  <div class="mock-emotion">😄</div>
+                  <div class="mock-emotion">🙂</div>
+                  <div class="mock-emotion">😐</div>
+                  <div class="mock-emotion">😢</div>
+                  <div class="mock-emotion">😡</div>
+                  <div class="mock-emotion">😴</div>
+                </div>
+                <div class="mock-chart">
+                  <strong>월간 기분 흐름</strong>
+                  <div class="mock-bars">
+                    <span class="mock-bar" style="width: 96%"></span>
+                    <span class="mock-bar" style="width: 72%"></span>
+                    <span class="mock-bar" style="width: 58%"></span>
+                  </div>
+                </div>
+                <div class="mock-note">운동, 친구, 공부 같은 활동과 기분의 관계를 분석</div>
+              </div>
+            </div>
+            <div class="app-copy">
+              <h3>Daylio · 글로벌 표준형 기분 추적</h3>
+              <div class="meta"><span>1,000만+ 다운로드</span><span>4.8</span><span>리뷰 약 45.6만</span></div>
+              <div class="cols">
+                <div class="mini"><h4>핵심 기능</h4><ul><li>기분 선택</li><li>활동 태그</li><li>차트/통계</li><li>백업/내보내기</li></ul></div>
+                <div class="mini"><h4>강점</h4><ul><li>글 없이 빠른 기록</li><li>장기 데이터 분석</li><li>글로벌 현지화</li></ul></div>
+                <div class="mini"><h4>약점/불만</h4><ul><li>사진 복원 이슈</li><li>테마 다양성 요구</li><li>플랫폼 이동 불편</li></ul></div>
+              </div>
+              <p class="note">우리 앱 시사점: 사진과 백업은 감정 기록 앱의 핵심 신뢰 요소입니다. 가족방 암호화와 저장 안정성을 더 잘 보여주면 차별화됩니다.</p>
+            </div>
+          </article>
+
+          <article class="app-card" style="--mock-bg: #fff4d7; --mock-accent: #ffd86f">
+            <div class="phone" aria-label="하루콩 사용 이미지 mockup">
+              <div class="screen">
+                <div class="mock-title"><span>하루콩</span><span>🫘</span></div>
+                <div class="mock-calendar">
+                  <span class="mock-day">1</span><span class="mock-day is-on">2</span><span class="mock-day">3</span><span class="mock-day is-on">4</span><span class="mock-day">5</span><span class="mock-day">6</span><span class="mock-day is-on">7</span>
+                  <span class="mock-day">8</span><span class="mock-day is-on">9</span><span class="mock-day">10</span><span class="mock-day">11</span><span class="mock-day is-on">12</span><span class="mock-day">13</span><span class="mock-day">14</span>
+                  <span class="mock-day is-on">15</span><span class="mock-day">16</span><span class="mock-day">17</span><span class="mock-day is-on">18</span><span class="mock-day">19</span><span class="mock-day">20</span><span class="mock-day is-on">21</span>
+                  <span class="mock-day">22</span><span class="mock-day is-on">23</span><span class="mock-day">24</span><span class="mock-day">25</span><span class="mock-day is-on">26</span><span class="mock-day">27</span><span class="mock-day">28</span>
+                </div>
+                <div class="mock-emotions">
+                  <div class="mock-emotion">😆</div><div class="mock-emotion">😊</div><div class="mock-emotion">😐</div>
+                  <div class="mock-emotion">😢</div><div class="mock-emotion">😡</div><div class="mock-emotion">📝</div>
+                </div>
+                <div class="mock-note">몇 번의 탭으로 하루 기분과 활동을 저장</div>
+              </div>
+            </div>
+            <div class="app-copy">
+              <h3>하루콩 · 한국형 감정 캘린더 강자</h3>
+              <div class="meta"><span>100만+ 다운로드</span><span>iOS 평점 약 32,950개</span><span>4.7~4.83</span></div>
+              <div class="cols">
+                <div class="mini"><h4>핵심 기능</h4><ul><li>기분콩 선택</li><li>월간 캘린더</li><li>사진/한 줄 메모</li><li>주/월 통계</li></ul></div>
+                <div class="mini"><h4>강점</h4><ul><li>매우 쉬운 입력</li><li>캐릭터 친근감</li><li>한국어 UX 완성도</li></ul></div>
+                <div class="mini"><h4>약점/불만</h4><ul><li>구독 결제 혼란</li><li>저장/동기화 불만</li><li>데이터 안정성 요구</li></ul></div>
+              </div>
+              <p class="note">우리 앱 시사점: 하루콩보다 부모와 아이가 함께 보는 가족 감정 캘린더로 포지션을 좁히는 것이 좋습니다.</p>
+            </div>
+          </article>
+
+          <article class="app-card" style="--mock-bg: #eefde8; --mock-accent: #9ee493">
+            <div class="phone" aria-label="데이블룸 사용 이미지 mockup">
+              <div class="screen">
+                <div class="mock-title"><span>데이블룸</span><span>🌿</span></div>
+                <div class="mock-photo">감사의 정원</div>
+                <div class="mock-note"><strong>오늘의 질문</strong><br />오늘 고마웠던 사람은 누구였나요?</div>
+                <div class="mock-chart">
+                  <strong>주간 감사 리포트</strong>
+                  <div class="mock-bars"><span class="mock-bar" style="width: 88%"></span><span class="mock-bar" style="width: 62%"></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="app-copy">
+              <h3>데이블룸 · 감사일기와 확언</h3>
+              <div class="meta"><span>5만+ 다운로드</span><span>4.9</span><span>리뷰 약 2.8천</span></div>
+              <div class="cols">
+                <div class="mini"><h4>핵심 기능</h4><ul><li>감사일기</li><li>확언</li><li>오늘의 주제</li><li>주간 리포트</li></ul></div>
+                <div class="mini"><h4>강점</h4><ul><li>따뜻한 브랜딩</li><li>습관 형성</li><li>문장형 피드백</li></ul></div>
+                <div class="mini"><h4>약점/불만</h4><ul><li>배경음악 다양성 요구</li><li>프리미엄 가치 기대</li><li>감사 중심으로 범위 제한</li></ul></div>
+              </div>
+              <p class="note">우리 앱 시사점: 단순 통계보다 아이와 대화할 수 있는 따뜻한 질문과 부모용 문장형 리포트가 경쟁력이 됩니다.</p>
+            </div>
+          </article>
+
+          <article class="app-card" style="--mock-bg: #fff0f6; --mock-accent: #ffb3d1">
+            <div class="phone" aria-label="기분일기 Mood Tracker 사용 이미지 mockup">
+              <div class="screen">
+                <div class="mock-title"><span>기분일기</span><span>🐾</span></div>
+                <div class="mock-pet">🐶</div>
+                <div class="mock-emotions">
+                  <div class="mock-emotion">😊</div><div class="mock-emotion">😌</div><div class="mock-emotion">😟</div>
+                  <div class="mock-emotion">🏃</div><div class="mock-emotion">💧</div><div class="mock-emotion">🛏️</div>
+                </div>
+                <div class="mock-note">기분 기록으로 펫과 습관을 함께 돌봄</div>
+              </div>
+            </div>
+            <div class="app-copy">
+              <h3>기분일기 Mood Tracker · 펫과 습관</h3>
+              <div class="meta"><span>100만+ 다운로드</span><span>4.7</span><span>리뷰 약 2.1만</span></div>
+              <div class="cols">
+                <div class="mini"><h4>핵심 기능</h4><ul><li>감정 기록</li><li>펫 육성</li><li>습관 목표</li><li>Google Drive 백업</li></ul></div>
+                <div class="mini"><h4>강점</h4><ul><li>게임적 지속성</li><li>귀여운 감성</li><li>습관 관리 결합</li></ul></div>
+                <div class="mini"><h4>약점/불만</h4><ul><li>감정 종류 부족 의견</li><li>기록 찾기 어려움</li><li>행복지수 중심 느낌</li></ul></div>
+              </div>
+              <p class="note">우리 앱 시사점: 5대 감정 카테고리와 세부 감정 구조는 좋은 차별점입니다. 검색과 다시 보기도 계속 강화해야 합니다.</p>
+            </div>
+          </article>
+
+          <article class="app-card" style="--mock-bg: #f2f4ff; --mock-accent: #c8c7ff">
+            <div class="phone" aria-label="MOODA 사용 이미지 mockup">
+              <div class="screen">
+                <div class="mock-title"><span>MOODA</span><span>🛋️</span></div>
+                <div class="mock-room">
+                  <div class="mock-furniture"></div><div class="mock-furniture" style="opacity: .55"></div>
+                  <div class="mock-furniture" style="opacity: .7"></div><div class="mock-furniture" style="opacity: .4"></div>
+                </div>
+                <div class="mock-note"><strong>오늘의 방</strong><br />기분에 맞춰 방을 꾸미고 친구와 공유</div>
+                <div class="mock-emotions"><div class="mock-emotion">💗</div><div class="mock-emotion">📷</div><div class="mock-emotion">👥</div></div>
+              </div>
+            </div>
+            <div class="app-copy">
+              <h3>MOODA · 꾸미기와 친구 공유</h3>
+              <div class="meta"><span>App Store</span><span>4.61</span><span>평점 약 8,829개</span></div>
+              <div class="cols">
+                <div class="mini"><h4>핵심 기능</h4><ul><li>방 꾸미기</li><li>감정 일기</li><li>친구 공유</li><li>사진/투두</li></ul></div>
+                <div class="mini"><h4>강점</h4><ul><li>감성적 브랜드</li><li>공간 꾸미기 몰입</li><li>소셜 연결</li></ul></div>
+                <div class="mini"><h4>약점/불만</h4><ul><li>기록보다 꾸미기 중심 가능</li><li>앱이 무거워질 수 있음</li><li>아이 가족용 특화는 아님</li></ul></div>
+              </div>
+              <p class="note">우리 앱 시사점: 친구 공유보다 가족 공유, 특히 부모-아이 감정 대화에 집중하면 더 선명한 포지션이 됩니다.</p>
+            </div>
+          </article>
+
+          <article class="app-card" style="--mock-bg: #edf7ff; --mock-accent: #bde4ff">
+            <div class="phone" aria-label="마인디 사용 이미지 mockup">
+              <div class="screen">
+                <div class="mock-title"><span>마인디</span><span>💬</span></div>
+                <div class="mock-ai">
+                  <div class="bubble">오늘 어떤 일이 있었나요?</div>
+                  <div class="bubble user">친구랑 다퉈서 속상했어요.</div>
+                  <div class="bubble">그때 떠오른 생각과 감정을 나눠볼까요?</div>
+                </div>
+                <div class="mock-note"><strong>CBT 기록</strong><br />사건 · 생각 · 감정을 분리해 정리</div>
+              </div>
+            </div>
+            <div class="app-copy">
+              <h3>마인디 · CBT와 AI 상담형 기록</h3>
+              <div class="meta"><span>App Store</span><span>4.78</span><span>평점 약 272개</span></div>
+              <div class="cols">
+                <div class="mini"><h4>핵심 기능</h4><ul><li>CBT 감정일기</li><li>AI 채팅</li><li>질문 답변</li><li>월간 리포트</li></ul></div>
+                <div class="mini"><h4>강점</h4><ul><li>심리학 포지션</li><li>대화형 기록</li><li>자기이해 지원</li></ul></div>
+                <div class="mini"><h4>약점/불만</h4><ul><li>아이에게 무거울 수 있음</li><li>AI 상담 안전 이슈</li><li>신뢰 책임 부담</li></ul></div>
+              </div>
+              <p class="note">우리 앱 시사점: 당장 AI 상담보다 부모-아이 대화 프롬프트가 안전하고 제품 콘셉트와 잘 맞습니다.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>공통 성공 공식</h2>
+            <p>상위 앱들은 서로 다르지만, 사용자가 계속 기록하게 만드는 공통 구조가 있습니다.</p>
+          </div>
+        </div>
+        <div class="insights">
+          <div class="insight-card"><strong>입력은 짧게</strong>기분 선택, 활동 태그, 한 줄 메모처럼 부담이 낮아야 매일 기록합니다.</div>
+          <div class="insight-card"><strong>다시 보기는 선명하게</strong>월간 캘린더, 사진, 검색, 통계가 있어야 기록의 가치가 쌓입니다.</div>
+          <div class="insight-card"><strong>데이터는 안전하게</strong>저장 누락, 백업 실패, 사진 복원 문제는 감정 기록 앱에서 가장 치명적입니다.</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>마음 캘린더 추천 전략</h2>
+            <p>경쟁 앱과 정면 승부하기보다, 아이와 가족이라는 좁고 강한 포지션을 잡는 것이 좋습니다.</p>
+          </div>
+        </div>
+        <ul class="check-list">
+          <li><strong>가족방 기반 공동 기록:</strong> 개인용 감정일기 앱들과 다르게 부모와 아이가 함께 보는 구조를 강조합니다.</li>
+          <li><strong>아이 감정 문해력:</strong> 기쁨, 슬픔, 분노, 혐오, 두려움 카테고리와 세부 감정명을 교육적 장점으로 보여줍니다.</li>
+          <li><strong>개발자도 못 보는 암호화:</strong> 가족방 기록이 암호화된다는 점을 설정 화면과 온보딩에서 명확히 설명합니다.</li>
+          <li><strong>부모용 문장형 리포트:</strong> 단순 그래프보다 “이번 주 아이가 자주 느낀 감정”과 “대화해볼 질문”을 제공합니다.</li>
+          <li><strong>사진 정책 투명화:</strong> 현재 사진은 이 기기에 저장된다는 점을 안내하고, 추후 암호화 클라우드 사진 저장을 검토합니다.</li>
+        </ul>
+        <p class="note">
+          결론: 경쟁 앱은 대부분 개인 감정/일기 기록에 강합니다. 마음 캘린더는
+          아이 감정 문해력, 가족 공유, 프라이버시 암호화를 전면에 세우면
+          뚜렷하게 다른 앱이 될 수 있습니다.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
