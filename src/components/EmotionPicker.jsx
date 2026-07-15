@@ -1,10 +1,15 @@
-import { useState } from "react";
-import { emotionCategories, emotions } from "../data/emotions";
+import { useEffect, useState } from "react";
+import { getEmotionSet } from "../data/emotions";
 
-export function EmotionPicker({ selectedEmotions, onToggleEmotion }) {
-  const [activeCategoryId, setActiveCategoryId] = useState(emotionCategories[0].id);
-  const activeCategory = emotionCategories.find((category) => category.id === activeCategoryId) || emotionCategories[0];
+export function EmotionPicker({ profileType = "adult", selectedEmotions, onToggleEmotion }) {
+  const { categories, emotions } = getEmotionSet(profileType);
+  const [activeCategoryId, setActiveCategoryId] = useState(categories[0].id);
+  const activeCategory = categories.find((category) => category.id === activeCategoryId) || categories[0];
   const visibleEmotions = emotions.filter((emotion) => emotion.categoryId === activeCategory.id);
+
+  useEffect(() => {
+    setActiveCategoryId(categories[0].id);
+  }, [profileType, categories]);
 
   return (
     <section className="section" aria-label="감정 선택">
@@ -14,7 +19,7 @@ export function EmotionPicker({ selectedEmotions, onToggleEmotion }) {
       </div>
       <p className="hint">먼저 감정 가족을 고르고, 가장 가까운 마음을 눌러주세요. 하루에 3개까지 고를 수 있어요.</p>
       <div className="emotion-category-tabs" role="tablist" aria-label="감정 카테고리">
-        {emotionCategories.map((category) => (
+        {categories.map((category) => (
           <button
             className={`emotion-category-tab ${activeCategory.id === category.id ? "active" : ""}`}
             key={category.id}

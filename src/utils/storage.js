@@ -19,6 +19,7 @@ export function normalizeUsers(savedUsers) {
       return {
         name: user,
         avatar: defaultUsers[index]?.avatar || "🙂",
+        profileType: "adult",
         password: "0000",
       };
     }
@@ -26,6 +27,7 @@ export function normalizeUsers(savedUsers) {
     return {
       name: user.name || `사용자${index + 1}`,
       avatar: user.avatar || "🙂",
+      profileType: user.profileType || "adult",
       password: user.password || "0000",
     };
   });

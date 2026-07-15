@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마음 캘린더 사용자 경험 설문</title>
+    <style>
+      :root {
+        --ink: #243044;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --paper: #fffaf3;
+        --card: #ffffff;
+        --pink: #ffe4ef;
+        --blue: #e4f0ff;
+        --mint: #dff7ec;
+        --yellow: #fff1bf;
+        --green: #76c893;
+        --shadow: 0 18px 45px rgba(36, 48, 68, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(255, 228, 239, 0.8), transparent 34rem),
+          radial-gradient(circle at top right, rgba(228, 240, 255, 0.95), transparent 30rem),
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui,
+          -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.65;
+      }
+
+      .page {
+        width: min(960px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 42px 0 72px;
+      }
+
+      .hero,
+      .section,
+      .question-card {
+        border: 1px solid rgba(36, 48, 68, 0.08);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        padding: clamp(28px, 5vw, 54px);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .hero::after {
+        content: "😊 😢 😠 😨 ✨";
+        position: absolute;
+        right: 28px;
+        bottom: 22px;
+        color: rgba(36, 48, 68, 0.12);
+        font-size: clamp(34px, 8vw, 88px);
+        font-weight: 900;
+        letter-spacing: -0.12em;
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid rgba(36, 48, 68, 0.1);
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: #fff;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+      }
+
+      h1 {
+        max-width: 680px;
+        margin-top: 18px;
+        font-size: clamp(36px, 7vw, 68px);
+      }
+
+      .hero p {
+        max-width: 690px;
+        margin: 20px 0 0;
+        color: #475569;
+        font-size: 18px;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 26px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 9px 13px;
+        background: var(--mint);
+        color: #22543d;
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .section {
+        margin-top: 24px;
+        padding: 28px;
+      }
+
+      .section p {
+        margin: 10px 0 0;
+        color: var(--muted);
+      }
+
+      .guide-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .guide-card {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        background: #fff;
+      }
+
+      .guide-card strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      form {
+        display: grid;
+        gap: 18px;
+        margin-top: 24px;
+      }
+
+      .question-card {
+        padding: 24px;
+      }
+
+      .question-head {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .number {
+        display: grid;
+        flex: 0 0 auto;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border-radius: 14px;
+        background: var(--ink);
+        color: #fff;
+        font-weight: 900;
+      }
+
+      label,
+      legend {
+        font-weight: 900;
+      }
+
+      fieldset {
+        margin: 16px 0 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .options {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .option {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: #fff;
+      }
+
+      input[type="radio"],
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--green);
+      }
+
+      input[type="text"],
+      textarea,
+      select {
+        width: 100%;
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 13px 15px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 116px;
+        resize: vertical;
+      }
+
+      .scale {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .scale .option {
+        justify-content: center;
+        min-height: 64px;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .note {
+        border-left: 5px solid var(--green);
+        border-radius: 18px;
+        padding: 16px 18px;
+        background: #f0fdf4;
+        color: #365345;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 13px 18px;
+        background: var(--ink);
+        color: #fff;
+        font: inherit;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #e2e8f0;
+        color: #334155;
+      }
+
+      @media (max-width: 760px) {
+        .guide-grid,
+        .scale {
+          grid-template-columns: 1fr;
+        }
+
+        .hero,
+        .section,
+        .question-card {
+          border-radius: 22px;
+          padding: 20px;
+        }
+
+        .hero::after {
+          display: none;
+        }
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        .hero,
+        .section,
+        .question-card {
+          box-shadow: none;
+        }
+
+        .actions {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <span class="eyebrow">마음 캘린더 사용자 경험 설문</span>
+        <h1>마음 기록이 더 쉽고 따뜻해지려면?</h1>
+        <p>
+          이 설문은 마음 캘린더를 사용해본 분들의 경험을 듣기 위한 질문지입니다.
+          답변은 앱의 사용성, 가족 공유, 감정 기록, 개인정보 보호 기능을 개선하는 데 사용됩니다.
+        </p>
+        <div class="meta">
+          <span class="pill">예상 소요 3~5분</span>
+          <span class="pill">질문 15개</span>
+          <span class="pill">아이/부모 모두 응답 가능</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>응답 안내</h2>
+        <p>정답은 없습니다. 실제로 느낀 점을 편하게 적어주세요.</p>
+        <div class="guide-grid">
+          <div class="guide-card"><strong>누가 답하나요?</strong>아이, 부모, 보호자, 선생님 모두 답할 수 있습니다.</div>
+          <div class="guide-card"><strong>어떤 내용을 묻나요?</strong>기록하기, 캘린더, 리포트, 가족 공유, 개인정보 보호 경험을 묻습니다.</div>
+          <div class="guide-card"><strong>어떻게 쓰나요?</strong>브라우저에서 작성하거나 프린트해서 인터뷰지로 사용할 수 있습니다.</div>
+        </div>
+      </section>
+
+      <form>
+        <section class="question-card">
+          <div class="question-head"><span class="number">1</span><label for="role">마음 캘린더를 어떤 입장에서 사용하셨나요?</label></div>
+          <select id="role" name="role">
+            <option value="">선택해 주세요</option>
+            <option>아이 본인</option>
+            <option>부모/보호자</option>
+            <option>아이와 부모가 함께</option>
+            <option>선생님/상담자</option>
+            <option>기타</option>
+          </select>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">2</span><label for="usage">얼마나 사용해 보셨나요?</label></div>
+          <select id="usage" name="usage">
+            <option value="">선택해 주세요</option>
+            <option>처음 열어보기만 했다</option>
+            <option>1~2번 기록해 봤다</option>
+            <option>3일 이상 기록해 봤다</option>
+            <option>1주 이상 사용해 봤다</option>
+            <option>가족방/동기화까지 사용해 봤다</option>
+          </select>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">3</span><legend>처음 앱을 봤을 때 무엇을 하는 앱인지 이해하기 쉬웠나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="understand" />1 전혀 아님</label>
+            <label class="option"><input type="radio" name="understand" />2</label>
+            <label class="option"><input type="radio" name="understand" />3 보통</label>
+            <label class="option"><input type="radio" name="understand" />4</label>
+            <label class="option"><input type="radio" name="understand" />5 매우 쉬움</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">4</span><legend>감정 선택 과정은 쉬웠나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="emotionEase" />1 어렵다</label>
+            <label class="option"><input type="radio" name="emotionEase" />2</label>
+            <label class="option"><input type="radio" name="emotionEase" />3 보통</label>
+            <label class="option"><input type="radio" name="emotionEase" />4</label>
+            <label class="option"><input type="radio" name="emotionEase" />5 쉽다</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">5</span><legend>감정 이름과 이모지가 아이에게 이해하기 쉬웠나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="emotionWords" />1 전혀 아님</label>
+            <label class="option"><input type="radio" name="emotionWords" />2</label>
+            <label class="option"><input type="radio" name="emotionWords" />3 보통</label>
+            <label class="option"><input type="radio" name="emotionWords" />4</label>
+            <label class="option"><input type="radio" name="emotionWords" />5 매우 쉬움</label>
+          </fieldset>
+          <textarea name="emotionWordsComment" placeholder="어렵거나 헷갈린 감정 이름이 있었다면 적어주세요."></textarea>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">6</span><legend>기록하기 화면에서 가장 좋았던 기능은 무엇인가요? 복수 선택 가능</legend></div>
+          <fieldset class="options">
+            <label class="option"><input type="checkbox" name="favorite" />감정 여러 개 선택</label>
+            <label class="option"><input type="checkbox" name="favorite" />메모 질문/도움말</label>
+            <label class="option"><input type="checkbox" name="favorite" />사진 추가</label>
+            <label class="option"><input type="checkbox" name="favorite" />저장/수정 완료 문구</label>
+            <label class="option"><input type="checkbox" name="favorite" />아이별 사용자 선택</label>
+            <label class="option"><input type="checkbox" name="favorite" />아직 잘 모르겠다</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">7</span><label for="hardPart">사용하면서 불편하거나 헷갈렸던 부분은 무엇인가요?</label></div>
+          <textarea id="hardPart" name="hardPart" placeholder="예: 어디를 눌러야 할지 모르겠어요, 저장됐는지 헷갈렸어요, 글씨가 작아요 등"></textarea>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">8</span><legend>캘린더에서 지난 기록을 다시 보는 경험은 어땠나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="calendar" />1 불편함</label>
+            <label class="option"><input type="radio" name="calendar" />2</label>
+            <label class="option"><input type="radio" name="calendar" />3 보통</label>
+            <label class="option"><input type="radio" name="calendar" />4</label>
+            <label class="option"><input type="radio" name="calendar" />5 편리함</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">9</span><legend>리포트/통계 화면이 아이의 마음을 이해하는 데 도움이 되었나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="report" />1 도움 안 됨</label>
+            <label class="option"><input type="radio" name="report" />2</label>
+            <label class="option"><input type="radio" name="report" />3 보통</label>
+            <label class="option"><input type="radio" name="report" />4</label>
+            <label class="option"><input type="radio" name="report" />5 매우 도움</label>
+          </fieldset>
+          <textarea name="reportComment" placeholder="리포트에서 더 보고 싶은 내용이 있다면 적어주세요."></textarea>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">10</span><legend>가족방/Google 로그인/초대 링크 기능을 사용해 보셨나요?</legend></div>
+          <fieldset class="options">
+            <label class="option"><input type="radio" name="familyUse" />사용해 봤고 이해하기 쉬웠다</label>
+            <label class="option"><input type="radio" name="familyUse" />사용해 봤지만 어려웠다</label>
+            <label class="option"><input type="radio" name="familyUse" />기능은 봤지만 아직 사용하지 않았다</label>
+            <label class="option"><input type="radio" name="familyUse" />어디에 있는지 몰랐다</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">11</span><legend>가족방 기록이 암호화되어 개발자도 내용을 볼 수 없다는 설명이 신뢰감을 주나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="privacy" />1 전혀 아님</label>
+            <label class="option"><input type="radio" name="privacy" />2</label>
+            <label class="option"><input type="radio" name="privacy" />3 보통</label>
+            <label class="option"><input type="radio" name="privacy" />4</label>
+            <label class="option"><input type="radio" name="privacy" />5 매우 신뢰됨</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">12</span><legend>현재 사진이 이 기기/브라우저에만 저장된다는 점을 어떻게 느끼시나요?</legend></div>
+          <fieldset class="options">
+            <label class="option"><input type="radio" name="photoPolicy" />개인정보 보호에 좋아서 괜찮다</label>
+            <label class="option"><input type="radio" name="photoPolicy" />다른 기기에서도 보여야 해서 아쉽다</label>
+            <label class="option"><input type="radio" name="photoPolicy" />설명이 더 필요하다</label>
+            <label class="option"><input type="radio" name="photoPolicy" />사진 기능을 사용하지 않는다</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">13</span><legend>앞으로 꼭 추가되면 좋겠는 기능은 무엇인가요? 최대 3개 선택</legend></div>
+          <fieldset class="options">
+            <label class="option"><input type="checkbox" name="future" />기록 알림/리마인더</label>
+            <label class="option"><input type="checkbox" name="future" />부모용 주간 리포트</label>
+            <label class="option"><input type="checkbox" name="future" />아이와 대화할 질문 추천</label>
+            <label class="option"><input type="checkbox" name="future" />암호화된 사진 클라우드 저장</label>
+            <label class="option"><input type="checkbox" name="future" />감정 카드/캐릭터 꾸미기</label>
+            <label class="option"><input type="checkbox" name="future" />학교/상담용 공유 리포트</label>
+            <label class="option"><input type="checkbox" name="future" />홈 화면 앱 설치/PWA</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">14</span><legend>마음 캘린더를 다른 가족이나 친구에게 추천하고 싶나요?</legend></div>
+          <fieldset class="scale">
+            <label class="option"><input type="radio" name="recommend" />1 전혀 아님</label>
+            <label class="option"><input type="radio" name="recommend" />2</label>
+            <label class="option"><input type="radio" name="recommend" />3 보통</label>
+            <label class="option"><input type="radio" name="recommend" />4</label>
+            <label class="option"><input type="radio" name="recommend" />5 매우 추천</label>
+          </fieldset>
+        </section>
+
+        <section class="question-card">
+          <div class="question-head"><span class="number">15</span><label for="lastComment">마지막으로, 마음 캘린더가 더 좋아지기 위해 꼭 바뀌었으면 하는 점을 자유롭게 적어주세요.</label></div>
+          <textarea id="lastComment" name="lastComment" placeholder="좋았던 점, 아쉬운 점, 아이가 한 말, 부모 입장에서 필요한 점 등을 자유롭게 적어주세요."></textarea>
+        </section>
+
+        <section class="section">
+          <h2>설문 종료</h2>
+          <p class="note">응답해 주셔서 감사합니다. 이 의견은 마음 캘린더를 더 안전하고 따뜻한 가족 감정 기록 도구로 개선하는 데 사용됩니다.</p>
+          <div class="actions">
+            <button type="button" onclick="window.print()">프린트 / PDF 저장</button>
+            <button class="secondary" type="reset">입력 내용 지우기</button>
+          </div>
+        </section>
+      </form>
+    </main>
+  </body>
+</html>

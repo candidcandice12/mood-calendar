@@ -476,11 +476,55 @@
         color: #365345;
       }
 
+      .download-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .download-card {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 18px;
+        background: #fff;
+      }
+
+      .download-card strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+
+      .download-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .download-links a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: #111827;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .download-links a.secondary {
+        background: #f1f5f9;
+        color: #334155;
+      }
+
       @media (max-width: 920px) {
         .hero,
         .app-card,
         .cols,
-        .insights {
+        .insights,
+        .download-grid {
           grid-template-columns: 1fr;
         }
 
@@ -653,6 +697,84 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>앱별 다운로드 링크</h2>
+            <p>
+              앱 이름이 비슷한 경우가 있어, 일부 링크는 스토어 검색 결과로
+              연결했습니다. 스토어에서 개발사와 앱 아이콘을 한 번 더 확인한 뒤
+              설치하는 것이 안전합니다.
+            </p>
+          </div>
+        </div>
+        <div class="download-grid">
+          <div class="download-card">
+            <strong>Daylio</strong>
+            <div class="download-links">
+              <a href="https://play.google.com/store/search?q=Daylio&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+              <a class="secondary" href="https://apps.apple.com/kr/search?term=Daylio" target="_blank" rel="noopener noreferrer">App Store</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>데이블룸</strong>
+            <div class="download-links">
+              <a href="https://play.google.com/store/search?q=%EB%8D%B0%EC%9D%B4%EB%B8%94%EB%A3%B8&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+              <a class="secondary" href="https://apps.apple.com/kr/search?term=%EB%8D%B0%EC%9D%B4%EB%B8%94%EB%A3%B8" target="_blank" rel="noopener noreferrer">App Store</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>기분일기 Mood Tracker</strong>
+            <div class="download-links">
+              <a href="https://play.google.com/store/search?q=%EA%B8%B0%EB%B6%84%EC%9D%BC%EA%B8%B0%20Mood%20Tracker&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+              <a class="secondary" href="https://apps.apple.com/kr/search?term=%EA%B8%B0%EB%B6%84%EC%9D%BC%EA%B8%B0%20Mood%20Tracker" target="_blank" rel="noopener noreferrer">App Store</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>하루콩</strong>
+            <div class="download-links">
+              <a href="https://play.google.com/store/search?q=%ED%95%98%EB%A3%A8%EC%BD%A9&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+              <a class="secondary" href="https://apps.apple.com/kr/search?term=%ED%95%98%EB%A3%A8%EC%BD%A9" target="_blank" rel="noopener noreferrer">App Store</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>심플 일기장</strong>
+            <div class="download-links">
+              <a href="https://play.google.com/store/search?q=%EC%8B%AC%ED%94%8C%20%EC%9D%BC%EA%B8%B0%EC%9E%A5&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+              <a class="secondary" href="https://apps.apple.com/kr/search?term=%EC%8B%AC%ED%94%8C%20%EC%9D%BC%EA%B8%B0%EC%9E%A5" target="_blank" rel="noopener noreferrer">App Store</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>MOODA</strong>
+            <div class="download-links">
+              <a href="https://apps.apple.com/kr/search?term=MOODA" target="_blank" rel="noopener noreferrer">App Store</a>
+              <a class="secondary" href="https://play.google.com/store/search?q=MOODA&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>꼬박일기</strong>
+            <div class="download-links">
+              <a href="https://apps.apple.com/kr/search?term=%EA%BC%AC%EB%B0%95%EC%9D%BC%EA%B8%B0" target="_blank" rel="noopener noreferrer">App Store</a>
+              <a class="secondary" href="https://play.google.com/store/search?q=%EA%BC%AC%EB%B0%95%EC%9D%BC%EA%B8%B0&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>마인디</strong>
+            <div class="download-links">
+              <a href="https://apps.apple.com/kr/search?term=%EB%A7%88%EC%9D%B8%EB%94%94" target="_blank" rel="noopener noreferrer">App Store</a>
+              <a class="secondary" href="https://play.google.com/store/search?q=%EB%A7%88%EC%9D%B8%EB%94%94&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+            </div>
+          </div>
+          <div class="download-card">
+            <strong>구름모드</strong>
+            <div class="download-links">
+              <a href="https://apps.apple.com/kr/search?term=%EA%B5%AC%EB%A6%84%EB%AA%A8%EB%93%9C" target="_blank" rel="noopener noreferrer">App Store</a>
+              <a class="secondary" href="https://play.google.com/store/search?q=%EA%B5%AC%EB%A6%84%EB%AA%A8%EB%93%9C&c=apps" target="_blank" rel="noopener noreferrer">Google Play</a>
+            </div>
+          </div>
         </div>
       </section>
 

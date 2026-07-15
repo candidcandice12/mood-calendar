@@ -47,7 +47,7 @@ export function UserManager({ users, currentUser, onAddUser, onEditCurrentUser, 
       {isEditingUser && currentUser && <NewUserForm users={users} initialUser={currentUser} onCreateUser={editUser} onCancel={() => setIsEditingUser(false)} />}
       {currentUser && (
         <div className="button-row">
-          <button className="soft-btn" type="button" onClick={() => setIsEditingUser(true)}>이름/이모지 변경</button>
+          <button className="soft-btn" type="button" onClick={() => setIsEditingUser(true)}>프로필 변경</button>
           <button className="soft-btn" type="button" onClick={onChangePassword}>비밀번호 변경</button>
           <button className="soft-btn danger-light" type="button" onClick={onDeleteCurrentUser}>사용자 삭제</button>
         </div>

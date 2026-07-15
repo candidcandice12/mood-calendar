@@ -4,6 +4,7 @@ import { avatarOptions } from "../data/emotions";
 export function NewUserForm({ users, initialUser = null, onCreateUser, onCancel }) {
   const [name, setName] = useState(initialUser?.name || "");
   const [avatar, setAvatar] = useState(initialUser?.avatar || avatarOptions[0]);
+  const [profileType, setProfileType] = useState(initialUser?.profileType || "child");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,7 +35,7 @@ export function NewUserForm({ users, initialUser = null, onCreateUser, onCancel 
       return;
     }
 
-    onCreateUser({ name: trimmedName, avatar, password: initialUser?.password || password });
+    onCreateUser({ name: trimmedName, avatar, profileType, password: initialUser?.password || password });
   }
 
   return (
@@ -48,6 +49,28 @@ export function NewUserForm({ users, initialUser = null, onCreateUser, onCancel 
         <span>이름</span>
         <input value={name} placeholder="예: 하린" onChange={(event) => setName(event.target.value)} />
       </label>
+
+      <div className="form-field">
+        <span>감정 리스트 고르기</span>
+        <div className="profile-type-options">
+          <button
+            className={`profile-type-option ${profileType === "child" ? "selected" : ""}`}
+            type="button"
+            onClick={() => setProfileType("child")}
+          >
+            <strong>유아</strong>
+            <small>쉬운 말과 몸 느낌 포함</small>
+          </button>
+          <button
+            className={`profile-type-option ${profileType === "adult" ? "selected" : ""}`}
+            type="button"
+            onClick={() => setProfileType("adult")}
+          >
+            <strong>성인</strong>
+            <small>현재 감정 리스트 사용</small>
+          </button>
+        </div>
+      </div>
 
       <div className="form-field">
         <span>아바타 고르기</span>

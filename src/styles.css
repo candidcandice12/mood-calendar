@@ -376,6 +376,43 @@ button,
   border-color: #ffb3c6;
 }
 
+.profile-type-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.profile-type-option {
+  border: 2px solid #ffe0e9;
+  border-radius: 18px;
+  background: #fff;
+  color: #666;
+  padding: 12px;
+  text-align: left;
+}
+
+.profile-type-option strong,
+.profile-type-option small {
+  display: block;
+}
+
+.profile-type-option strong {
+  color: #555;
+  font-size: 15px;
+}
+
+.profile-type-option small {
+  color: #888;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.profile-type-option.selected {
+  border-color: #ff8fab;
+  background: #fff4f7;
+  box-shadow: 0 6px 14px rgba(255, 143, 171, 0.18);
+}
+
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);

@@ -240,7 +240,7 @@ export function App() {
       delete nextRecords[previousName];
       return nextRecords;
     });
-    setStatus("사용자 이름과 이모지를 바꿨어요.");
+    setStatus("사용자 이름, 이모지, 감정 리스트를 바꿨어요.");
   }
 
   function selectUser(user) {
@@ -638,7 +638,7 @@ export function App() {
         <div className="tab-panel">
           <HelperBubble selectedEmotions={selectedEmotions} hasRecord={Boolean(currentRecord)} status={status} />
           <SelectedDateCard selectedDate={selectedDate} selectedEmotions={selectedEmotions} hasRecord={Boolean(currentRecord)} />
-          <EmotionPicker selectedEmotions={selectedEmotions} onToggleEmotion={toggleEmotion} />
+          <EmotionPicker profileType={currentUser?.profileType} selectedEmotions={selectedEmotions} onToggleEmotion={toggleEmotion} />
           <RecordEditor
             memo={memo}
             status={status}
