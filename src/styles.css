@@ -467,6 +467,13 @@ button:disabled {
   border: 3px solid transparent;
 }
 
+.user-btn small {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.78;
+}
+
 .user-btn.active {
   background: #ffb3c6;
   color: white;
