@@ -3,7 +3,9 @@ export function HelperBubble({ selectedEmotions, hasRecord, status }) {
 
   return (
     <section className="helper-bubble" aria-label="캐릭터 도우미">
-      <div className="helper-character">🐰</div>
+      <div className="helper-character">
+        <img src="/favicon.png" alt="무디" />
+      </div>
       <div className="helper-message">{helperMessage}</div>
     </section>
   );

@@ -281,6 +281,13 @@ h2 {
   box-shadow: 0 8px 18px rgba(180, 160, 160, 0.18);
 }
 
+.helper-character img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .helper-message {
   position: relative;
   border-radius: 18px;

@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마음 캘린더 인스타그램 소개 카드</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #fff8f2;
+        color: #253044;
+        font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+      }
+      .page {
+        width: min(1180px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 34px 0 70px;
+      }
+      .hero {
+        border-radius: 30px;
+        background: linear-gradient(135deg, #ffe4ef, #e4f0ff 52%, #fff1bf);
+        padding: 30px;
+        box-shadow: 0 18px 45px rgba(37, 48, 68, 0.13);
+      }
+      h1 { margin: 0 0 10px; font-size: clamp(30px, 5vw, 54px); letter-spacing: -0.05em; }
+      p { margin: 0; color: #5d6778; line-height: 1.6; }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        background: #253044;
+        color: white;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 900;
+        padding: 12px 16px;
+      }
+      button.secondary { background: #fff; color: #253044; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+        margin-top: 26px;
+      }
+      .card-wrap {
+        border: 1px solid rgba(37, 48, 68, 0.1);
+        border-radius: 26px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 16px 34px rgba(37, 48, 68, 0.1);
+        padding: 14px;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        border-radius: 20px;
+        background: #fff;
+      }
+      .card-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .card-actions strong { font-size: 14px; }
+      .card-actions button { padding: 9px 12px; font-size: 13px; }
+      .tip {
+        border-left: 5px solid #76c893;
+        border-radius: 18px;
+        background: #f0fdf4;
+        margin-top: 22px;
+        padding: 16px;
+      }
+      @media (max-width: 760px) {
+        .grid { grid-template-columns: 1fr; }
+        .hero { padding: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <h1>인스타그램 소개 카드</h1>
+        <p>인스타그램 피드 1:1 비율인 1080 × 1080px 카드입니다. 각 카드별로 PNG 다운로드가 가능하고, 전체 카드도 한 번에 다운로드할 수 있습니다.</p>
+        <div class="actions">
+          <button type="button" onclick="downloadAllCards()">전체 PNG 다운로드</button>
+          <button class="secondary" type="button" onclick="renderCards()">다시 그리기</button>
+        </div>
+      </section>
+
+      <section class="grid" id="cardGrid" aria-label="인스타그램 카드 목록"></section>
+
+      <p class="tip">다운로드한 이미지는 인스타그램 carousel 게시물에 1번부터 순서대로 올리면 됩니다.</p>
+    </main>
+
+    <script>
+      const CARD_SIZE = 1080;
+      const cards = [
+        {
+          title: "마음 캘린더",
+          subtitle: "아이와 어른이 함께 쓰는 감정 기록장",
+          body: "오늘의 마음을 쉽고 따뜻하게 남겨보세요.",
+          emoji: "🌈",
+          image: "public/favicon.png",
+          bg: ["#FFE4EF", "#E4F0FF", "#FFF1BF"],
+          mood: ["😊", "😢", "😠", "😨"],
+        },
+        {
+          title: "오늘의 감정을 기록",
+          subtitle: "하루에 감정 최대 3개까지",
+          body: "기쁜 마음, 속상한 마음, 걱정되는 마음을 골라요. 짧은 메모와 사진도 함께 남길 수 있어요.",
+          emoji: "✍️",
+          bg: ["#FFF1BF", "#FFE4EF", "#FFFFFF"],
+          mood: ["😊", "🥺", "😟"],
+        },
+        {
+          title: "아이에게 쉬운 감정 말",
+          subtitle: "유아용 감정 리스트 제공",
+          body: "행복한, 서운한, 샘나는, 무서운, 배고픈처럼 아이가 이해하기 쉬운 말로 기록해요.",
+          emoji: "🐰",
+          bg: ["#DFF7EC", "#E4F0FF", "#FFFFFF"],
+          mood: ["행복한", "서운한", "배고픈"],
+        },
+        {
+          title: "성인도 함께 사용 가능",
+          subtitle: "일반 성인, 아이들과 가족이 함께 사용 가능",
+          body: "프로필마다 유아/성인 감정 리스트를 선택할 수 있어 가족 모두에게 맞게 쓸 수 있어요.",
+          emoji: "👨‍👩‍👧‍👦",
+          bg: ["#EDE7FF", "#FFE4EF", "#FFFFFF"],
+          mood: ["유아", "성인", "가족"],
+        },
+        {
+          title: "일주일 단위로 살펴봐",
+          subtitle: "이번 주 마음 흐름 요약",
+          body: "한 주 동안 자주 느낀 감정을 보며 아이와 대화할 실마리를 찾아요.",
+          emoji: "📊",
+          bg: ["#E4F0FF", "#DFF7EC", "#FFFFFF"],
+          chart: true,
+        },
+        {
+          title: "한 달 단위로 내 마음을 살펴봐",
+          subtitle: "캘린더와 월간 리포트",
+          body: "감정이 쌓이면 한 달의 마음 패턴을 한눈에 볼 수 있어요.",
+          emoji: "🗓️",
+          bg: ["#FFE4EF", "#FFF1BF", "#FFFFFF"],
+          calendar: true,
+        },
+        {
+          title: "기록은 더 안전하게",
+          subtitle: "가족방 암호화와 투명한 사진 저장",
+          body: "가족방 기록은 암호화되고, 사진은 현재 기기/브라우저에 저장돼요.",
+          emoji: "🔐",
+          bg: ["#253044", "#4B5563", "#111827"],
+          dark: true,
+          mood: ["Google", "가족방", "암호화"],
+        },
+      ];
+
+      const imageCache = new Map();
+
+      function loadCardImages() {
+        return Promise.all(cards.filter((card) => card.image).map((card) => new Promise((resolve) => {
+          const image = new Image();
+          image.addEventListener("load", () => {
+            imageCache.set(card.image, image);
+            resolve();
+          });
+          image.addEventListener("error", resolve);
+          image.src = card.image;
+        })));
+      }
+
+      async function renderCards() {
+        await loadCardImages();
+        const grid = document.getElementById("cardGrid");
+        grid.innerHTML = "";
+
+        cards.forEach((card, index) => {
+          const wrapper = document.createElement("article");
+          wrapper.className = "card-wrap";
+
+          const canvas = document.createElement("canvas");
+          canvas.width = CARD_SIZE;
+          canvas.height = CARD_SIZE;
+          canvas.id = `promo-card-${index + 1}`;
+          drawCard(canvas, card, index);
+
+          const actions = document.createElement("div");
+          actions.className = "card-actions";
+          actions.innerHTML = `<strong>${index + 1}. ${card.title}</strong>`;
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = "PNG 다운로드";
+          button.addEventListener("click", () => downloadCanvas(canvas, `mood-calendar-instagram-${index + 1}.png`));
+          actions.appendChild(button);
+
+          wrapper.appendChild(canvas);
+          wrapper.appendChild(actions);
+          grid.appendChild(wrapper);
+        });
+      }
+
+      function drawCard(canvas, card, index) {
+        const ctx = canvas.getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, CARD_SIZE, CARD_SIZE);
+        card.bg.forEach((color, colorIndex) => gradient.addColorStop(colorIndex / (card.bg.length - 1), color));
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
+
+        drawBlob(ctx, 180, 170, 250, "rgba(255,255,255,0.42)");
+        drawBlob(ctx, 930, 220, 210, "rgba(255,255,255,0.32)");
+        drawBlob(ctx, 830, 900, 260, card.dark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.5)");
+
+        const ink = card.dark ? "#FFFFFF" : "#253044";
+        const muted = card.dark ? "rgba(255,255,255,0.76)" : "#5D6778";
+        const panel = card.dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.75)";
+
+        roundRect(ctx, 70, 70, 940, 940, 58, panel);
+        ctx.strokeStyle = card.dark ? "rgba(255,255,255,0.18)" : "rgba(37,48,68,0.08)";
+        ctx.lineWidth = 3;
+        roundedPath(ctx, 70, 70, 940, 940, 58);
+        ctx.stroke();
+
+        ctx.fillStyle = card.dark ? "rgba(255,255,255,0.16)" : "#FFFFFF";
+        roundRect(ctx, 110, 110, 240, 56, 28, ctx.fillStyle);
+        ctx.fillStyle = card.dark ? "#FFFFFF" : "#FF4F7F";
+        setFont(ctx, 24, 900);
+        ctx.fillText("MOOD CALENDAR", 136, 148);
+
+        ctx.fillStyle = ink;
+        setFont(ctx, 132, 900);
+        const titleEndY = wrapText(ctx, card.title, 110, 330, 820, 132);
+
+        ctx.fillStyle = muted;
+        setFont(ctx, 42, 800);
+        const subtitleStartY = Math.max(520, titleEndY + 72);
+        const subtitleEndY = wrapText(ctx, card.subtitle, 116, subtitleStartY, 820, 52);
+
+        ctx.fillStyle = muted;
+        setFont(ctx, 34, 700);
+        wrapText(ctx, card.body, 116, Math.max(650, subtitleEndY + 58), 820, 48);
+
+        ctx.fillStyle = card.dark ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.72)";
+        roundRect(ctx, 110, 810, 860, 135, 38, ctx.fillStyle);
+
+        if (card.chart) drawChart(ctx);
+        else if (card.calendar) drawCalendar(ctx);
+        else drawMoodChips(ctx, card.mood || [], card.dark);
+
+        ctx.fillStyle = card.dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.6)";
+        ctx.beginPath();
+        ctx.arc(850, 215, 105, 0, Math.PI * 2);
+        ctx.fill();
+        if (card.image && imageCache.has(card.image)) {
+          const image = imageCache.get(card.image);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(850, 215, 82, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(image, 768, 133, 164, 164);
+          ctx.restore();
+        } else {
+          setFont(ctx, 82, 900);
+          ctx.fillStyle = ink;
+          ctx.textAlign = "center";
+          ctx.fillText(card.emoji, 850, 245);
+          ctx.textAlign = "left";
+        }
+
+        ctx.fillStyle = card.dark ? "rgba(255,255,255,0.55)" : "rgba(37,48,68,0.45)";
+        setFont(ctx, 22, 900);
+        ctx.fillText(`${index + 1} / ${cards.length}`, 850, 960);
+      }
+
+      function drawMoodChips(ctx, items, dark) {
+        const chipWidth = 250;
+        items.slice(0, 3).forEach((item, index) => {
+          const x = 140 + index * 270;
+          roundRect(ctx, x, 845, chipWidth, 66, 33, dark ? "rgba(255,255,255,0.18)" : "#FFFFFF");
+          ctx.fillStyle = dark ? "#FFFFFF" : "#253044";
+          setFont(ctx, typeof item === "string" && item.length > 3 ? 24 : 36, 900);
+          ctx.textAlign = "center";
+          ctx.fillText(item, x + chipWidth / 2, 889);
+          ctx.textAlign = "left";
+        });
+      }
+
+      function drawChart(ctx) {
+        const rows = [0.82, 0.62, 0.42];
+        rows.forEach((width, index) => {
+          const y = 838 + index * 34;
+          roundRect(ctx, 150, y, 740, 20, 10, "rgba(255,255,255,0.9)");
+          roundRect(ctx, 150, y, 740 * width, 20, 10, ["#FF8FAB", "#93C5FD", "#86EFAC"][index]);
+        });
+      }
+
+      function drawCalendar(ctx) {
+        for (let row = 0; row < 2; row += 1) {
+          for (let col = 0; col < 7; col += 1) {
+            const x = 145 + col * 105;
+            const y = 828 + row * 52;
+            const active = (row + col) % 2 === 0;
+            roundRect(ctx, x, y, 76, 38, 14, active ? "#FFCAD8" : "#FFFFFF");
+            ctx.fillStyle = active ? "#9F1239" : "#94A3B8";
+            setFont(ctx, 18, 900);
+            ctx.textAlign = "center";
+            ctx.fillText(active ? "😊" : String(row * 7 + col + 1), x + 38, y + 26);
+            ctx.textAlign = "left";
+          }
+        }
+      }
+
+      function drawBlob(ctx, x, y, radius, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function roundRect(ctx, x, y, width, height, radius, fillStyle) {
+        roundedPath(ctx, x, y, width, height, radius);
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+
+      function roundedPath(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+
+      function setFont(ctx, size, weight) {
+        ctx.font = `${weight} ${size}px Pretendard, Apple SD Gothic Neo, Noto Sans KR, Arial, sans-serif`;
+      }
+
+      function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(" ");
+        let line = "";
+        let currentY = y;
+        words.forEach((word) => {
+          const testLine = line ? `${line} ${word}` : word;
+          if (ctx.measureText(testLine).width > maxWidth && line) {
+            ctx.fillText(line, x, currentY);
+            line = word;
+            currentY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        });
+        ctx.fillText(line, x, currentY);
+        return currentY;
+      }
+
+      function downloadCanvas(canvas, filename) {
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      }
+
+      function downloadAllCards() {
+        document.querySelectorAll("canvas").forEach((canvas, index) => {
+          setTimeout(() => downloadCanvas(canvas, `mood-calendar-instagram-${index + 1}.png`), index * 250);
+        });
+      }
+
+      renderCards();
+    </script>
+  </body>
+</html>
