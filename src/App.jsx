@@ -23,6 +23,7 @@ import { getMonthStats, getRecordEmotions, getSearchResults, getWeeklyReport } f
 
 const today = new Date();
 const initialFamilyAccess = getInitialFamilyAccess();
+const USER_GUIDE_URL = "https://mood-calendar-azure.vercel.app/how-to-use.html";
 
 function getInitialCloudStatus() {
   if (isFirebaseConfigured) {
@@ -52,6 +53,8 @@ export function App() {
   const [familyKey, setFamilyKey] = useState(initialFamilyAccess.familyKey);
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("record");
+  const [isGuidePopupOpen, setIsGuidePopupOpen] = useState(() => !readJson("hideMoodCalendarGuidePopup", false));
+  const [hideGuidePopup, setHideGuidePopup] = useState(false);
 
   const currentRecord = currentUser ? records[currentUser.name]?.[selectedDate] || null : null;
   const monthStats = currentUser ? getMonthStats(records, currentUser.name, currentYear, currentMonth) : [];
@@ -599,8 +602,34 @@ export function App() {
     reader.readAsText(file);
   }
 
+  function closeGuidePopup() {
+    if (hideGuidePopup) {
+      localStorage.setItem("hideMoodCalendarGuidePopup", "true");
+    }
+
+    setIsGuidePopupOpen(false);
+  }
+
   return (
     <main className="app">
+      {isGuidePopupOpen && (
+        <div className="guide-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="guide-popup-title">
+          <section className="guide-popup">
+            <button className="guide-popup-close" type="button" aria-label="사용자 가이드 팝업 닫기" onClick={closeGuidePopup}>×</button>
+            <div className="guide-popup-icon">🌈</div>
+            <h2 id="guide-popup-title">마음 캘린더가 처음이라면?</h2>
+            <p>기록을 시작하기 전에 Google 연동, 프로필 설정, 감정 기록, 리포트 보는 법을 간단히 확인해보세요.</p>
+            <a className="guide-popup-link" href={USER_GUIDE_URL} target="_blank" rel="noopener noreferrer" onClick={closeGuidePopup}>
+              마음 캘린더 사용자 가이드 읽어보러 가기
+            </a>
+            <label className="guide-popup-checkbox">
+              <input type="checkbox" checked={hideGuidePopup} onChange={(event) => setHideGuidePopup(event.target.checked)} />
+              <span>다시 보지 않기</span>
+            </label>
+          </section>
+        </div>
+      )}
+
       <section className="hero-card">
         <div className="hero-badge">Mood Calendar</div>
         <h1>마음 캘린더</h1>
@@ -684,10 +713,13 @@ export function App() {
       )}
 
       <footer className="survey-footer">
-        마음 캘린더를 사용 후 앱 사용자 설문조사에 응답해주세요. {" "}
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLScWxz7V-KNNsi6YtgtlMd3pCHriuMwgqdUIuny65AjDZNf-vA/viewform" target="_blank" rel="noopener noreferrer">
-          설문조사 하러 가기
-        </a>
+        <p>
+          마음 캘린더를 사용 후 앱 사용자 설문조사에 응답해주세요. {" "}
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLScWxz7V-KNNsi6YtgtlMd3pCHriuMwgqdUIuny65AjDZNf-vA/viewform" target="_blank" rel="noopener noreferrer">
+            설문조사 하러 가기
+          </a>
+        </p>
+        <p>문의사항: candidcandice12@gmail.com</p>
       </footer>
     </main>
   );
