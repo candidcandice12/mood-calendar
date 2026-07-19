@@ -682,6 +682,13 @@ export function App() {
           <BackupBox onExportBackup={exportBackup} onImportBackup={importBackup} />
         </div>
       )}
+
+      <footer className="survey-footer">
+        마음 캘린더를 사용 후 앱 사용자 설문조사에 응답해주세요. {" "}
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLScWxz7V-KNNsi6YtgtlMd3pCHriuMwgqdUIuny65AjDZNf-vA/viewform" target="_blank" rel="noopener noreferrer">
+          설문조사 하러 가기
+        </a>
+      </footer>
     </main>
   );
 }

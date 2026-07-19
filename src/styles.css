@@ -35,6 +35,26 @@ input {
   box-shadow: 0 10px 30px rgba(180, 160, 160, 0.25);
 }
 
+.survey-footer {
+  border: 2px solid #ffe0e9;
+  border-radius: 20px;
+  background: #fff8fb;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.6;
+  margin-top: 18px;
+  padding: 14px;
+  text-align: center;
+}
+
+.survey-footer a {
+  color: #ff4f7f;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .hero-card {
   text-align: center;
   border-radius: 26px;
