@@ -254,19 +254,14 @@
         else if (card.calendar) drawCalendar(ctx);
         else drawMoodChips(ctx, card.mood || [], card.dark);
 
-        ctx.fillStyle = card.dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.6)";
-        ctx.beginPath();
-        ctx.arc(850, 215, 105, 0, Math.PI * 2);
-        ctx.fill();
         if (card.image && imageCache.has(card.image)) {
           const image = imageCache.get(card.image);
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(850, 215, 82, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.drawImage(image, 768, 133, 164, 164);
-          ctx.restore();
+          ctx.drawImage(image, 750, 115, 200, 200);
         } else {
+          ctx.fillStyle = card.dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.6)";
+          ctx.beginPath();
+          ctx.arc(850, 215, 105, 0, Math.PI * 2);
+          ctx.fill();
           setFont(ctx, 82, 900);
           ctx.fillStyle = ink;
           ctx.textAlign = "center";

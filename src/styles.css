@@ -275,17 +275,14 @@ h2 {
   place-items: center;
   width: 58px;
   height: 58px;
-  border-radius: 50%;
-  background: #fff;
+  background: transparent;
   font-size: 34px;
-  box-shadow: 0 8px 18px rgba(180, 160, 160, 0.18);
 }
 
 .helper-character img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
 }
 
 .helper-message {
