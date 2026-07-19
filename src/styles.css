@@ -280,9 +280,10 @@ h2 {
 }
 
 .helper-character img {
-  width: 58px;
-  height: 58px;
-  object-fit: contain;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .helper-message {

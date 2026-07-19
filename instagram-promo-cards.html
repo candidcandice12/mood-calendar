@@ -256,7 +256,12 @@
 
         if (card.image && imageCache.has(card.image)) {
           const image = imageCache.get(card.image);
-          ctx.drawImage(image, 750, 115, 200, 200);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(850, 215, 92, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(image, 758, 123, 184, 184);
+          ctx.restore();
         } else {
           ctx.fillStyle = card.dark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.6)";
           ctx.beginPath();
