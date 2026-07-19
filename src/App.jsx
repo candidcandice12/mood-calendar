@@ -715,7 +715,7 @@ export function App() {
       <footer className="survey-footer">
         <p>
           마음 캘린더를 사용 후 앱 사용자 설문조사에 응답해주세요. {" "}
-          <a href="https://docs.google.com/forms/d/e/1FAIpQLScWxz7V-KNNsi6YtgtlMd3pCHriuMwgqdUIuny65AjDZNf-vA/viewform" target="_blank" rel="noopener noreferrer">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSdlBiUuQQ7SpCtdTbEDJxG5apnuYUddybozvUv5PrMk_HalwA/viewform" target="_blank" rel="noopener noreferrer">
             설문조사 하러 가기
           </a>
         </p>
