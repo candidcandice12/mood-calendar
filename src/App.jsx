@@ -463,7 +463,7 @@ export function App() {
       await signInWithGoogle();
       setCloudStatus("Google 로그인에 성공했어요");
     } catch (error) {
-      setCloudStatus("Google 로그인에 실패했어요");
+      setCloudStatus(`Google 로그인 실패: ${getFriendlyAuthErrorMessage(error)}`);
       console.error(error);
     }
   }
@@ -817,6 +817,18 @@ function getFriendlyErrorMessage(error) {
   }
 
   return error?.message || "잠시 후 다시 시도해 주세요.";
+}
+
+function getFriendlyAuthErrorMessage(error) {
+  const messages = {
+    "auth/popup-blocked": "브라우저에서 로그인 창이 차단됐어요. 팝업을 허용하고 다시 시도해 주세요.",
+    "auth/popup-closed-by-user": "로그인 창이 닫혔어요. 다시 시도해 주세요.",
+    "auth/unauthorized-domain": "현재 앱 주소가 Firebase 승인 도메인에 등록되지 않았어요.",
+    "auth/operation-not-allowed": "Firebase에서 Google 로그인이 활성화되지 않았어요.",
+    "auth/network-request-failed": "네트워크 연결을 확인하고 다시 시도해 주세요.",
+  };
+
+  return messages[error?.code] || error?.message || "잠시 후 다시 시도해 주세요.";
 }
 
 function getInitialFamilyAccess() {

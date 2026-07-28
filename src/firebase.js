@@ -7,7 +7,6 @@ import {
   setPersistence,
   signInAnonymously,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -77,12 +76,6 @@ export async function signInWithGoogle() {
 
   await setPersistence(auth, browserLocalPersistence);
   const provider = new GoogleAuthProvider();
-
-  if (isMobileBrowser()) {
-    await signInWithRedirect(auth, provider);
-    return null;
-  }
-
   const credential = await signInWithPopup(auth, provider);
   return credential.user;
 }
@@ -93,12 +86,4 @@ export async function signOutFromFirebase() {
   }
 
   await signOut(auth);
-}
-
-function isMobileBrowser() {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
-
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
