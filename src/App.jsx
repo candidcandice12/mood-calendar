@@ -3,6 +3,7 @@ import { AccountBox } from "./components/AccountBox";
 import { BackupBox } from "./components/BackupBox";
 import { Calendar } from "./components/Calendar";
 import { EmotionPicker } from "./components/EmotionPicker";
+import { FamilyInviteGate } from "./components/FamilyInviteGate";
 import { HelperBubble } from "./components/HelperBubble";
 import { RecordEditor } from "./components/RecordEditor";
 import { SearchBox } from "./components/SearchBox";
@@ -456,6 +457,9 @@ export function App() {
 
   async function handleGoogleSignIn() {
     try {
+      if (familyId) {
+        setIsCloudLoaded(false);
+      }
       await signInWithGoogle();
       setCloudStatus("Google 로그인에 성공했어요");
     } catch (error) {
@@ -470,10 +474,15 @@ export function App() {
     if (!ok) return;
 
     try {
+      const wasInFamily = Boolean(familyId);
       await signOutFromFirebase();
+      if (familyId) {
+        localStorage.removeItem(getFamilyKeyStorageKey(familyId));
+      }
       setFamilyId("");
       setFamilyKey("");
-      setCloudStatus("로그아웃했어요. 로컬 저장 모드입니다.");
+      setIsCloudLoaded(false);
+      setCloudStatus(wasInFamily ? "로그아웃하고 가족방에서 나왔어요. 로컬 저장 모드입니다." : "로그아웃했어요. 로컬 저장 모드입니다.");
     } catch (error) {
       setCloudStatus("로그아웃 중 문제가 있었어요.");
       console.error(error);
@@ -608,6 +617,21 @@ export function App() {
     }
 
     setIsGuidePopupOpen(false);
+  }
+
+  if (familyId && (!isAuthReady || !authUser || !isCloudLoaded)) {
+    return (
+      <main className="app invite-app">
+        <FamilyInviteGate
+          familyId={familyId}
+          isAuthReady={isAuthReady}
+          isCloudLoaded={isCloudLoaded}
+          authUser={authUser}
+          cloudStatus={cloudStatus}
+          onGoogleSignIn={handleGoogleSignIn}
+        />
+      </main>
+    );
   }
 
   return (
