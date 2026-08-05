@@ -4,6 +4,7 @@ export const adultEmotionCategories = [
   { id: "anger", emoji: "😠", name: "분노", englishName: "Anger", color: "#FFADAD" },
   { id: "disgust", emoji: "🤢", name: "혐오", englishName: "Disgust", color: "#B8F2A5" },
   { id: "fear", emoji: "😨", name: "두려움", englishName: "Fear", color: "#D0BFFF" },
+  { id: "body", emoji: "🫶", name: "몸과 느낌", englishName: "Body Feelings", color: "#FBCFE8" },
 ];
 
 export const adultEmotions = [
@@ -35,6 +36,13 @@ export const adultEmotions = [
   { categoryId: "fear", emoji: "😟", name: "걱정되는", englishName: "Worried", color: "#C7D2FE" },
   { categoryId: "fear", emoji: "😫", name: "스트레스받는", englishName: "Stressed", color: "#A5B4FC" },
   { categoryId: "fear", emoji: "😮", name: "놀란", englishName: "Surprised", color: "#E0E7FF" },
+  { categoryId: "body", emoji: "⚡", name: "활력 있는", englishName: "Energized", color: "#FDE68A" },
+  { categoryId: "body", emoji: "🧘", name: "편안한", englishName: "Relaxed", color: "#FBCFE8" },
+  { categoryId: "body", emoji: "🫨", name: "긴장된", englishName: "Tense", color: "#F9A8D4" },
+  { categoryId: "body", emoji: "😴", name: "피곤한", englishName: "Tired", color: "#F0ABFC" },
+  { categoryId: "body", emoji: "🤒", name: "아픈", englishName: "Sick", color: "#FDA4AF" },
+  { categoryId: "body", emoji: "🍽️", name: "배고픈", englishName: "Hungry", color: "#FCD34D" },
+  { categoryId: "body", emoji: "🥱", name: "졸린", englishName: "Sleepy", color: "#C4B5FD" },
 ];
 
 export const childEmotionCategories = [
